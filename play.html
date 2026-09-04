@@ -136,7 +136,6 @@
         </div>
         <div><strong id="h-name-disp"></strong> | <span id="h-gold-t"></span>G | <span id="h-dist-t"></span>m</div>
         <button onclick="openProfile()">CHARACTER</button>
-        <button onclick="openFeedback()" style="font-size:11px;">FEEDBACK</button>
     </div>
 
     <!-- Auth (sign up / log in) — shown first, before any character is visible -->
@@ -323,16 +322,6 @@
     </div>
 
     <!-- Generic dialogue modal — used by quest givers for multi-line, branching conversations -->
-    <!-- Feedback modal -->
-    <div id="feedback-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; max-width:420px; background:linear-gradient(160deg,#101a28,#080d15); border:2px solid var(--accent); border-radius:10px; z-index:150; padding:20px; box-shadow:0 0 100px rgba(0,0,0,.8);">
-        <h3 style="margin:0 0 6px; color:var(--accent);">Feedback</h3>
-        <p style="font-size:12px; opacity:.75; margin-top:0;">Found a bug, or have an idea? Tell us.</p>
-        <textarea id="feedback-text" rows="5" style="width:100%; box-sizing:border-box; padding:10px; background:#0a121c; border:1px solid #2a3a4d; color:#cfd8e6; border-radius:5px; font-family:Georgia,serif; font-size:13px; resize:vertical;" placeholder="What's on your mind?"></textarea>
-        <p id="feedback-status" style="font-size:12px; min-height:16px; margin:8px 0;"></p>
-        <button onclick="submitFeedback()">SEND</button>
-        <button onclick="closeFeedback()">CANCEL</button>
-    </div>
-
     <div id="dialogue-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; max-width:480px; background:linear-gradient(160deg,#101a28,#080d15); border:2px solid var(--accent); border-radius:10px; z-index:150; padding:20px; box-shadow:0 0 100px rgba(0,0,0,.8);">
         <h3 id="dlg-speaker" style="margin:0 0 10px; color:var(--accent);"></h3>
         <p id="dlg-text" style="font-size:13px; line-height:1.6; text-align:left; min-height:60px;"></p>
@@ -389,26 +378,6 @@
         await sb.auth.signOut();
         currentUser = null; hero = null; currentHeroKey = null;
         location.reload();
-    }
-
-    function openFeedback() {
-        if (!currentUser) { alert("Log in first to send feedback."); return; }
-        document.getElementById('feedback-modal').style.display = 'block';
-    }
-    function closeFeedback() {
-        document.getElementById('feedback-modal').style.display = 'none';
-        document.getElementById('feedback-text').value = '';
-        document.getElementById('feedback-status').innerText = '';
-    }
-    async function submitFeedback() {
-        const msg = document.getElementById('feedback-text').value.trim();
-        const statusEl = document.getElementById('feedback-status');
-        if (!msg) { statusEl.style.color = '#ff8b93'; statusEl.innerText = 'Write something first.'; return; }
-        statusEl.style.color = '#aab6c6'; statusEl.innerText = 'Sending...';
-        const { error } = await sb.from('feedback').insert({ user_id: currentUser.id, message: msg });
-        if (error) { statusEl.style.color = '#ff8b93'; statusEl.innerText = 'Something went wrong — try again.'; return; }
-        statusEl.style.color = '#6de3b0'; statusEl.innerText = 'Thanks! Feedback sent.';
-        setTimeout(closeFeedback, 1200);
     }
 
     // Checks name availability GLOBALLY (across every player) via a Postgres
