@@ -343,11 +343,22 @@
         const { data: { session } } = await sb.auth.getSession();
         if (session) {
             currentUser = session.user;
+            trackPresence();
             showScreen('intro-screen');
             renderIntroScreen();
         } else {
             showScreen('auth-screen');
         }
+    }
+    // Announces this player as "online" on a shared Realtime Presence channel —
+    // no database table involved, this is ephemeral and clears itself when the
+    // tab closes. index.html listens on the same channel (read-only) to show a
+    // live player count to visitors.
+    function trackPresence() {
+        const channel = sb.channel('online-players', { config: { presence: { key: currentUser.id } } });
+        channel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') await channel.track({ at: new Date().toISOString() });
+        });
     }
     function setAuthStatus(msg, ok) {
         const el = document.getElementById('auth-status');
@@ -371,6 +382,7 @@
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) { setAuthStatus(error.message); return; }
         currentUser = data.user;
+        trackPresence();
         showScreen('intro-screen');
         renderIntroScreen();
     }
