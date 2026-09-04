@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classes — Emberwood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #070b12; --void-2: #0e1620; --ember: #e2572a; --ember-glow: #f7a84e;
+    --parchment: #e8e1d3; --ink: #aab6c6; --teal: #4fe3c9; --line: rgba(232,225,211,0.1);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--void); color:var(--parchment); font-family:Georgia,'Times New Roman',serif; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; margin:0; }
+  a { color:inherit; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 32px; }
+  nav { position:sticky; top:0; z-index:20; background:rgba(7,11,18,0.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .nav-mark { font-family:'Cormorant Garamond',serif; font-size:22px; letter-spacing:0.06em; font-weight:600; }
+  .nav-links { display:flex; align-items:center; gap:24px; }
+  .nav-link-plain { font-size:14px; color:var(--ink); text-decoration:none; }
+  .nav-link-plain:hover { color:var(--ember-glow); }
+  .nav-cta { font-family:Georgia,serif; font-size:14px; padding:9px 20px; border:1px solid var(--ember); border-radius:3px; color:var(--ember-glow); text-decoration:none; transition:background .2s ease, color .2s ease; }
+  .nav-cta:hover { background:var(--ember); color:var(--void); }
+
+  .page-head { padding:60px 32px 20px; text-align:center; }
+  .page-head h1 { font-size:clamp(38px,6vw,60px); background:linear-gradient(180deg,var(--ember-glow),var(--ember)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .page-head p { color:var(--ink); font-family:'Cormorant Garamond',serif; font-style:italic; font-size:18px; margin-top:8px; }
+
+  .class-band { display:grid; grid-template-columns:220px 1fr; gap:50px; align-items:start; padding:56px 0; border-bottom:1px solid var(--line); }
+  .class-band.flip { grid-template-columns:1fr 220px; }
+  .class-band.flip .class-glyph { order:2; }
+  .class-glyph { display:flex; justify-content:center; opacity:.9; padding-top:8px; }
+  .class-name { font-size:44px; letter-spacing:0.02em; margin-bottom:12px; }
+  .class-name .accent { color:var(--ember-glow); }
+  .class-band.mage .class-name .accent { color:var(--teal); }
+  .class-flavor { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:20px; color:var(--ink); margin-bottom:14px; }
+  .class-detail { font-size:16px; opacity:.88; max-width:60ch; margin-bottom:20px; }
+  .stat-tip { font-size:13.5px; background:rgba(79,227,201,.06); border-left:2px solid var(--teal); padding:10px 14px; max-width:60ch; margin-bottom:22px; }
+  .stat-tip b { color:var(--teal); font-weight:normal; font-style:italic; font-family:'Cormorant Garamond',serif; }
+
+  .skill-groups { display:flex; gap:30px; flex-wrap:wrap; }
+  .skill-group h4 { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); margin-bottom:8px; font-weight:normal; font-family:Georgia,serif; }
+  .skill-group ul { list-style:none; margin:0; padding:0; font-size:13.5px; }
+  .skill-group li { padding:3px 0; }
+  .skill-group li b { color:var(--parchment); }
+
+  .final-cta { text-align:center; padding:100px 32px; background:radial-gradient(ellipse 60% 80% at 50% 40%, rgba(226,87,42,0.1), transparent); border-top:1px solid var(--line); }
+  .btn-primary { display:inline-block; padding:15px 44px; background:linear-gradient(180deg,var(--ember-glow),var(--ember)); color:var(--void); text-decoration:none; font-weight:bold; font-size:16px; border-radius:3px; box-shadow:0 8px 30px rgba(226,87,42,.35); }
+
+  footer { border-top:1px solid var(--line); padding:32px; text-align:center; font-size:13px; color:var(--ink); }
+
+  @media (max-width:720px) {
+    .class-band, .class-band.flip { grid-template-columns:1fr; }
+    .class-band.flip .class-glyph { order:0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="nav-mark">Emberwood</div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link-plain">Home</a>
+      <a href="bestiary.html" class="nav-link-plain">Bestiary</a>
+      <a class="nav-cta" href="play.html">Play Now</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-head">
+  <h1>The Three Paths</h1>
+  <p>Choose who you are before you find out what Emberwood is.</p>
+</div>
+
+<div class="wrap">
+
+  <div class="class-band fighter">
+    <div class="class-glyph">
+      <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
+        <path d="M70 14 L110 32 V70 C110 100 92 118 70 126 C48 118 30 100 30 70 V32 Z" stroke="#e2572a" stroke-width="1.5" opacity="0.9"/>
+        <line x1="70" y1="14" x2="70" y2="126" stroke="#e2572a" stroke-width="1" opacity="0.4"/>
+        <path d="M70 40 V96 M52 58 H88" stroke="#f7a84e" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="class-name"><span class="accent">Fighter</span></div>
+      <div class="class-flavor">Steel and grit. You go where the fighting is worst — and make sure you're the one still standing.</div>
+      <p class="class-detail">Wade in with a blade in one hand and a shield in the other, or give up the shield for a greatsword that hits twice as hard. Break enemy lines with Bash, and grow into a master of Sword and Shield or the Great Weapon.</p>
+      <div class="stat-tip"><b>STR</b> drives your Attack directly. <b>CON</b> keeps you standing with more Max HP, and a little <b>DEX</b> helps you hit and dodge more often.</div>
+      <div class="skill-groups">
+        <div class="skill-group">
+          <h4>Active</h4>
+          <ul><li><b>Bash</b> — reliable power hit</li><li><b>Shield Slam</b> — 1H + shield only</li><li><b>Cleaving Strike</b> — 2H weapon only</li></ul>
+        </div>
+        <div class="skill-group">
+          <h4>Passive</h4>
+          <ul><li><b>Sword &amp; Shield Mastery</b></li><li><b>Great Weapon Mastery</b></li><li><b>Toughness</b></li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="class-band archer flip">
+    <div class="class-glyph">
+      <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
+        <path d="M40 20 C80 40 80 100 40 120" stroke="#e2572a" stroke-width="1.5"/>
+        <line x1="40" y1="20" x2="110" y2="70" stroke="#f7a84e" stroke-width="1.5"/>
+        <line x1="40" y1="120" x2="110" y2="70" stroke="#f7a84e" stroke-width="1.5"/>
+        <path d="M100 62 L118 70 L100 78" stroke="#f7a84e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="class-name"><span class="accent">Archer</span></div>
+      <div class="class-flavor">You've hunted deeper into Emberwood than most dare. You know its paths, and its silence, better than anyone.</div>
+      <p class="class-detail">Loose two arrows at once with Double Shot, choose between the reach of a longbow or the punch of a crossbow, and let Sharp Eye turn a clean hit into a critical one.</p>
+      <div class="stat-tip"><b>DEX</b> sharpens both your accuracy and your Defense. <b>STR</b> still fuels your Attack behind the bow, and <b>LUK</b> boosts how often you land a Critical Hit.</div>
+      <div class="skill-groups">
+        <div class="skill-group">
+          <h4>Active</h4>
+          <ul><li><b>Double Shot</b> — two arrows, one turn</li><li><b>Piercing Shot</b> — bow only, can't miss</li><li><b>Rapid Reload</b> — crossbow only, huge crit</li></ul>
+        </div>
+        <div class="skill-group">
+          <h4>Passive</h4>
+          <ul><li><b>Longbow Mastery</b></li><li><b>Crossbow Mastery</b></li><li><b>Sharp Eye</b></li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="class-band mage">
+    <div class="class-glyph">
+      <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
+        <circle cx="70" cy="70" r="46" stroke="#4fe3c9" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="70" cy="70" r="4" fill="#4fe3c9"/>
+        <path d="M70 24 L70 44 M70 96 L70 116 M24 70 L44 70 M96 70 L116 70 M39 39 L52 52 M88 88 L101 101 M101 39 L88 52 M52 88 L39 101" stroke="#4fe3c9" stroke-width="1" opacity="0.6"/>
+      </svg>
+    </div>
+    <div>
+      <div class="class-name"><span class="accent">Mage</span></div>
+      <div class="class-flavor">You've felt the Ember's pull for years — a hum at the edge of your dreams. Now you mean to answer it.</div>
+      <p class="class-detail">Choose the spells that define you: elemental fire and frost, psychic tricks that stun and drain, or wards that turn incoming pain into mana. No two Mages build the same way twice.</p>
+      <div class="stat-tip"><b>INT</b> fuels both your Magic Attack and your Mana pool. <b>CON</b> keeps you alive at range, and a little <b>DEX</b> helps your spells land.</div>
+      <div class="skill-groups">
+        <div class="skill-group">
+          <h4>Elemental</h4>
+          <ul><li><b>Fireball</b></li><li><b>Frost Lance</b> — chills the target</li><li><b>Lightning Bolt</b> — high crit</li></ul>
+        </div>
+        <div class="skill-group">
+          <h4>Psychic</h4>
+          <ul><li><b>Mind Spike</b> — chance to stun</li><li><b>Psychic Drain</b> — damage + heal</li></ul>
+        </div>
+        <div class="skill-group">
+          <h4>Buff</h4>
+          <ul><li><b>Mana Shield</b></li><li><b>Arcane Ward</b></li><li><b>Quickened Mind</b></li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="final-cta">
+  <h2 style="font-size:clamp(30px,4.5vw,44px); margin-bottom:20px;">Which one are you?</h2>
+  <a class="btn-primary" href="play.html">Play Now</a>
+</div>
+
+<footer>
+  Emberwood: Dice &amp; Destiny — a fantasy RPG played in your browser.
+</footer>
+
+</body>
+</html>

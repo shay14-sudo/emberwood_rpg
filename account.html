@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up — Emberwood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #070b12; --void-2: #0e1620; --ember: #e2572a; --ember-glow: #f7a84e;
+    --parchment: #e8e1d3; --ink: #aab6c6; --teal: #4fe3c9; --line: rgba(232,225,211,0.1);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--void); color:var(--parchment); font-family:Georgia,'Times New Roman',serif; line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh; display:flex; flex-direction:column; }
+  h1,h2 { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; margin:0; }
+  a { color:inherit; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 32px; }
+  nav { position:sticky; top:0; z-index:20; background:rgba(7,11,18,0.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .nav-mark { font-family:'Cormorant Garamond',serif; font-size:22px; letter-spacing:0.06em; font-weight:600; }
+  .nav-link-plain { font-size:14px; color:var(--ink); text-decoration:none; }
+  .nav-link-plain:hover { color:var(--ember-glow); }
+
+  main { flex:1; display:flex; align-items:center; justify-content:center; padding:60px 24px; background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(226,87,42,0.1), transparent); }
+  .card { width:100%; max-width:380px; background:linear-gradient(160deg,#101a28,#080d15); border:1px solid var(--teal); border-radius:10px; padding:32px; box-shadow:0 0 60px rgba(79,227,201,.08); }
+  .card h1 { font-size:30px; color:var(--ember-glow); text-align:center; }
+  .card .sub { text-align:center; font-size:13px; color:var(--ink); margin:6px 0 26px; }
+
+  .tabs { display:flex; margin-bottom:22px; border:1px solid #2a3a4d; border-radius:6px; overflow:hidden; }
+  .tab { flex:1; text-align:center; padding:10px; font-size:13px; cursor:pointer; background:#0e161f; color:var(--ink); }
+  .tab.active { background:var(--teal); color:var(--void); font-weight:bold; }
+
+  input[type=email], input[type=password] {
+    width:100%; padding:11px; margin-bottom:12px; box-sizing:border-box;
+    background:#0a121c; border:1px solid #2a3a4d; color:var(--parchment); border-radius:5px; font-family:Georgia,serif; font-size:14px;
+  }
+  input::placeholder { color:#5a6a7a; }
+
+  button.submit {
+    width:100%; padding:13px; margin-top:6px; background:linear-gradient(180deg,var(--ember-glow),var(--ember));
+    color:var(--void); border:none; border-radius:5px; font-weight:bold; font-size:15px; cursor:pointer; font-family:Georgia,serif;
+  }
+  button.submit:hover { filter:brightness(1.08); }
+
+  #status { font-size:12.5px; margin-top:14px; min-height:16px; text-align:center; }
+
+  footer { border-top:1px solid var(--line); padding:24px; text-align:center; font-size:12px; color:var(--ink); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="nav-mark">Emberwood</div>
+    <a href="index.html" class="nav-link-plain">Back to Home</a>
+  </div>
+</nav>
+
+<main>
+  <div class="card">
+    <h1>Emberwood</h1>
+    <p class="sub">Create an account to save your heroes to the cloud.</p>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+      <div class="tab" id="tab-login" onclick="switchTab('login')">Log In</div>
+    </div>
+
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+
+    <button class="submit" id="submit-btn" onclick="handleSubmit()">CREATE ACCOUNT</button>
+
+    <p id="status"></p>
+  </div>
+</main>
+
+<footer>Emberwood: Dice &amp; Destiny</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = "https://oumdjrwwhpcinaezyluy.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_jDzoEz6ihG9Np8QB7rD_2A_j9O5C3B9";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let mode = 'signup';
+
+  function switchTab(m) {
+    mode = m;
+    document.getElementById('tab-signup').classList.toggle('active', m === 'signup');
+    document.getElementById('tab-login').classList.toggle('active', m === 'login');
+    document.getElementById('submit-btn').innerText = m === 'signup' ? 'CREATE ACCOUNT' : 'LOG IN';
+    setStatus('');
+  }
+
+  function setStatus(msg, ok) {
+    const el = document.getElementById('status');
+    el.innerText = msg;
+    el.style.color = ok ? '#6de3b0' : '#ff8b93';
+  }
+
+  async function handleSubmit() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if (!email || !password) { setStatus('Enter an email and password.'); return; }
+
+    if (mode === 'signup') {
+      setStatus('Creating account...');
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) { setStatus(error.message); return; }
+      setStatus('Account created! Check your email to confirm, then log in.', true);
+      switchTab('login');
+    } else {
+      setStatus('Signing in...');
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { setStatus(error.message); return; }
+      setStatus('Signed in! Taking you into Emberwood...', true);
+      setTimeout(() => { window.location.href = 'play.html'; }, 700);
+    }
+  }
+
+  // Already signed in? Skip straight to the game.
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { window.location.href = 'play.html'; }
+  })();
+</script>
+
+</body>
+</html>

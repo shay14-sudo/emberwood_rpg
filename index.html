@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emberwood — Dice &amp; Destiny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #070b12;
+    --void-2: #0e1620;
+    --void-3: #131f2c;
+    --ember: #e2572a;
+    --ember-glow: #f7a84e;
+    --parchment: #e8e1d3;
+    --ink: #aab6c6;
+    --teal: #4fe3c9;
+    --line: rgba(232,225,211,0.1);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--void);
+    color: var(--parchment);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--ember); color: var(--void); }
+
+  h1, h2, h3, .display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    color: var(--parchment);
+    margin: 0;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  .prose {
+    max-width: 62ch;
+  }
+
+  /* ---------- NAV ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(7,11,18,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .nav-mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .nav-cta {
+    font-family: Georgia, serif;
+    font-size: 14px;
+    padding: 9px 20px;
+    border: 1px solid var(--ember);
+    border-radius: 3px;
+    color: var(--ember-glow);
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .nav-cta:hover { background: var(--ember); color: var(--void); }
+  .nav-link-plain:hover { color: var(--ember-glow); }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    padding: 60px 32px 80px;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(226,87,42,0.16), transparent),
+      radial-gradient(ellipse 90% 60% at 50% 0%, rgba(19,31,44,0.9), var(--void) 70%);
+  }
+
+  .ember-field { position: absolute; inset: 0; pointer-events: none; }
+  .ember-dot {
+    position: absolute;
+    bottom: -10px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--ember-glow);
+    box-shadow: 0 0 8px 2px rgba(247,168,78,0.9);
+    animation: rise linear infinite;
+    opacity: 0;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    8%   { opacity: 0.9; }
+    90%  { opacity: 0.25; }
+    100% { transform: translateY(-70vh) translateX(var(--drift, 20px)); opacity: 0; }
+  }
+
+  .hero-eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero h1 {
+    font-size: clamp(56px, 11vw, 108px);
+    letter-spacing: 0.03em;
+    background: linear-gradient(180deg, var(--ember-glow) 0%, var(--ember) 55%, #b93a1c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 26px rgba(226,87,42,0.35));
+    position: relative;
+    z-index: 2;
+    line-height: 0.95;
+  }
+
+  .hero-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink);
+    margin-top: 8px;
+    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-premise {
+    max-width: 46ch;
+    margin: 34px auto 0;
+    font-size: 17px;
+    color: var(--parchment);
+    opacity: 0.88;
+    position: relative;
+    z-index: 2;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    margin-top: 38px;
+    padding: 15px 44px;
+    background: linear-gradient(180deg, var(--ember-glow), var(--ember));
+    color: var(--void);
+    text-decoration: none;
+    font-family: Georgia, serif;
+    font-weight: bold;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    border-radius: 3px;
+    box-shadow: 0 8px 30px rgba(226,87,42,0.35);
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(226,87,42,0.5); }
+
+  /* ---------- SECTION SHARED ---------- */
+  section { padding: 96px 0; }
+  .section-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--teal);
+    margin-bottom: 14px;
+  }
+
+  /* ---------- WORLD (journal block) ---------- */
+  .world { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .world .prose p:first-of-type::first-letter {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 64px;
+    font-weight: 600;
+    color: var(--ember-glow);
+    float: left;
+    line-height: 0.8;
+    margin: 6px 10px 0 0;
+  }
+  .world p { color: var(--parchment); opacity: 0.9; font-size: 16.5px; }
+  .world .quote {
+    margin-top: 28px;
+    padding-left: 20px;
+    border-left: 2px solid var(--ember);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+  }
+
+  /* ---------- CLASS BANDS ---------- */
+  .class-band {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 60px;
+    align-items: center;
+    padding: 64px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .class-band.flip { grid-template-columns: 220px 1fr; }
+  .class-band.flip .class-text { order: 2; }
+  .class-band.flip .class-glyph { order: 1; }
+
+  .class-name {
+    font-size: 40px;
+    letter-spacing: 0.02em;
+    margin-bottom: 14px;
+  }
+  .class-name .accent { color: var(--ember-glow); }
+  .class-band.mage .class-name .accent { color: var(--teal); }
+
+  .class-flavor {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .class-detail { font-size: 15.5px; opacity: 0.85; max-width: 52ch; }
+
+  .class-glyph { display: flex; justify-content: center; opacity: 0.9; }
+
+  /* ---------- WHAT AWAITS ---------- */
+  .awaits p { font-size: 16.5px; opacity: 0.88; }
+  .awaits .prose { color: var(--parchment); }
+  .awaits strong { color: var(--ember-glow); font-weight: normal; font-style: italic; font-family: 'Cormorant Garamond', serif; font-size: 1.05em; }
+
+  /* ---------- FOOTER CTA ---------- */
+  .final-cta {
+    text-align: center;
+    padding: 110px 32px;
+    background: radial-gradient(ellipse 60% 80% at 50% 40%, rgba(226,87,42,0.1), transparent);
+    border-top: 1px solid var(--line);
+  }
+  .final-cta h2 { font-size: clamp(34px, 5vw, 52px); margin-bottom: 20px; }
+
+  .news { border-top: 1px solid var(--line); padding: 48px 0; }
+  .news-list { max-width: 62ch; font-size: 12.5px; color: var(--ink); }
+  .news-list .entry { display: flex; gap: 12px; padding: 5px 0; border-bottom: 1px dotted var(--line); }
+  .news-list .entry .date { flex-shrink: 0; width: 78px; opacity: .6; }
+  .news-list .entry .tag { color: var(--teal); font-weight: bold; margin-right: 4px; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 32px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  @media (max-width: 720px) {
+    .class-band, .class-band.flip { grid-template-columns: 1fr; gap: 24px; }
+    .class-band.flip .class-text, .class-band.flip .class-glyph { order: unset; }
+    .class-glyph { order: -1; }
+    section { padding: 64px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="nav-mark">Emberwood</div>
+    <div class="nav-links" style="display:flex; align-items:center; gap:24px;">
+      <a href="classes.html" class="nav-link-plain" style="font-size:14px; color:var(--ink); text-decoration:none;">Classes</a>
+      <a href="bestiary.html" class="nav-link-plain" style="font-size:14px; color:var(--ink); text-decoration:none;">Bestiary</a>
+      <a href="account.html" class="nav-link-plain" style="font-size:14px; color:var(--ink); text-decoration:none;">Sign Up</a>
+      <a class="nav-cta" href="play.html">Play Now</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="ember-field" id="emberField"></div>
+  <div class="hero-eyebrow">A browser-based fantasy RPG</div>
+  <h1>Emberwood</h1>
+  <div class="hero-tagline">Dice &amp; Destiny</div>
+  <p class="hero-premise">
+    Something is waking beneath Emberwood. Wolves run mad on the old roads, goblin raiders push
+    toward town, and battlefields long grown over are giving up their dead.
+  </p>
+  <a class="btn-primary" id="play" href="play.html">Play Now</a>
+</header>
+
+<section class="news">
+  <div class="wrap">
+    <div class="section-label">News</div>
+    <div class="news-list">
+      <div class="entry"><span class="date">Sep 2, 2026</span><span><span class="tag">NEW</span>Cloud accounts — heroes now save to your account, not just your browser</span></div>
+      <div class="entry"><span class="date">Sep 2, 2026</span><span><span class="tag">NEW</span>Shop reorganized by gear slot instead of by set</span></div>
+      <div class="entry"><span class="date">Sep 2, 2026</span><span><span class="tag">NEW</span>Equipment rarity now grants bonus crit % and max HP</span></div>
+      <div class="entry"><span class="date">Sep 2, 2026</span><span><span class="tag">NEW</span>Level requirements added to all equipment</span></div>
+      <div class="entry"><span class="date">Sep 2, 2026</span><span><span class="tag">NEW</span>Selling gear now only happens at the Market</span></div>
+      <div class="entry"><span class="date">Sep 1, 2026</span><span><span class="tag">NEW</span>Three new zones: The Sunken Bog, The Old Mine, The Blightwood</span></div>
+      <div class="entry"><span class="date">Sep 1, 2026</span><span><span class="tag">NEW</span>Four zone bosses, each guarding an exclusive Legendary</span></div>
+      <div class="entry"><span class="date">Sep 1, 2026</span><span><span class="tag">NEW</span>Ember Wisp — rare special encounter</span></div>
+      <div class="entry"><span class="date">Sep 1, 2026</span><span><span class="tag">NEW</span>Fighter: Shield Slam and Cleaving Strike</span></div>
+      <div class="entry"><span class="date">Sep 1, 2026</span><span><span class="tag">NEW</span>Archer: Piercing Shot and Rapid Reload</span></div>
+      <div class="entry"><span class="date">Aug 31, 2026</span><span><span class="tag">BALANCED</span>Lightning Bolt damage scaling</span></div>
+      <div class="entry"><span class="date">Aug 31, 2026</span><span><span class="tag">FIXED</span>Bash and Double Shot usable without investing a skill point</span></div>
+      <div class="entry"><span class="date">Aug 31, 2026</span><span><span class="tag">NEW</span>Quest chain and Notice Board added</span></div>
+      <div class="entry"><span class="date">Aug 30, 2026</span><span><span class="tag">FIXED</span>XP bar showed percentage instead of amount</span></div>
+      <div class="entry"><span class="date">Aug 30, 2026</span><span><span class="tag">NEW</span>LUK stat and free stat allocation on character creation</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="world">
+  <div class="wrap prose">
+    <div class="section-label">The World</div>
+    <p>
+      Generations ago, a fragment of a fallen star buried itself in the roots of the forest west of
+      Ashmere, and never went cold. The town learned to live beside it — the trees that glow faintly
+      at dusk, the springs that taste faintly of copper, the deer that never seem to age. For a long
+      time, it slept.
+    </p>
+    <p>
+      It doesn't anymore.
+    </p>
+    <p>
+      What started on the north road hasn't stayed there. Past the ridge, an old battlefield is
+      giving up its dead. Deeper still, a sunken bog has started producing things that shouldn't be
+      able to walk, and an abandoned mine has gone from silent to occupied. Furthest out, the
+      Blightwood — once just an unpleasant stretch of trees — is spreading, slow and sure, toward
+      Ashmere's fields. Each place answers to something guarding it, older and worse than what
+      wanders its edges.
+    </p>
+    <p>
+      Nobody in Ashmere claims to understand what's waking. Captain Rowan keeps a running account of
+      it on the town's Notice Board — one job at a time, one answer at a time — because that's the
+      only way anyone's found to make the problem small enough to actually start on.
+    </p>
+    <div class="quote">
+      "Ashmere's guard is stretched thin, and the town's offering what coin and gear it can spare to
+      anyone willing to look into it." — Captain Rowan
+    </div>
+  </div>
+</section>
+
+<section class="classes" style="text-align:center; padding:70px 0;">
+  <div class="wrap">
+    <div class="section-label" style="justify-content:center; display:flex;">Choose Your Path</div>
+    <p class="prose" style="margin:0 auto 26px; opacity:.85;">Fighter, Archer, or Mage — each with its own weapons, playstyle, and skill tree to build around.</p>
+    <a class="btn-primary" href="classes.html" style="margin-top:0;">Meet the Classes</a>
+  </div>
+</section>
+
+<section class="awaits">
+  <div class="wrap prose">
+    <div class="section-label">What Awaits</div>
+    <p>
+      Emberwood isn't just fights strung together. Wander the forest and you'll find <strong>quiet
+      roads</strong> as often as monsters — a traveler who needs help, a chest half-buried in leaf
+      litter, a path that's simply empty. Ashmere's <strong>Notice Board</strong> keeps a running
+      account of the town's troubles, from thinning the wolves to whatever's rising past the ridge.
+      Gear up at the <strong>Market</strong> with loot you've earned, spend skill points where your
+      build wants them, and grow — level by level — into whoever you're going to become out there.
+    </p>
+  </div>
+</section>
+
+
+
+<div class="final-cta">
+  <h2>The forest is waiting.</h2>
+  <a class="btn-primary" href="play.html">Play Now</a>
+</div>
+
+<footer>
+  Emberwood: Dice &amp; Destiny — a fantasy RPG played in your browser.
+</footer>
+
+<script>
+  // Single orchestrated motion moment: a handful of embers drifting up through the hero.
+  const field = document.getElementById('emberField');
+  const COUNT = 22;
+  for (let i = 0; i < COUNT; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'ember-dot';
+    const left = Math.random() * 100;
+    const duration = 6 + Math.random() * 7;
+    const delay = Math.random() * 10;
+    const drift = (Math.random() * 60 - 30) + 'px';
+    dot.style.left = left + '%';
+    dot.style.setProperty('--drift', drift);
+    dot.style.animationDuration = duration + 's';
+    dot.style.animationDelay = delay + 's';
+    dot.style.width = dot.style.height = (2 + Math.random() * 3) + 'px';
+    field.appendChild(dot);
+  }
+</script>
+
+</body>
+</html>

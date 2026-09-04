@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Emberwood: Dice & Destiny - Ultimate Edition</title>
+    <style>
+        :root { --gold: #f2c94c; --bg: #0b1220; --panel: #121b2b; --accent: #4fe3c9; --accent-dim: rgba(79,227,201,.35); --violet: #a78bfa; }
+        body { font-family: 'Georgia', serif; background-color: #05080f; color: #cfd8e6; text-align: center; margin: 0; }
+        #game-container { max-width: 1600px; width: 98vw; margin: 10px auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 12px; position: relative; min-height: 94vh; box-shadow: 0 0 60px rgba(79,227,201,.12), 0 0 90px rgba(0,0,0,.6); }
+
+        /* Header */
+        .global-header { background: linear-gradient(180deg, var(--panel), #0c1420); padding: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); box-shadow: 0 2px 12px rgba(79,227,201,.15); }
+        .bar-container { width: 120px; text-align: left; font-size: 10px; color: #dfe8f2; }
+        .bar { width: 100%; height: 10px; background: #060a12; border: 1px solid var(--accent-dim); border-radius: 3px; overflow: hidden; margin-top: 2px; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg,#c0392b,#e74c3c); transition: width 0.3s; }
+        .mana-fill { height: 100%; background: linear-gradient(90deg,#2980b9,#5dade2); transition: width 0.3s; }
+        .xp-fill { height: 100%; background: linear-gradient(90deg,#1e9e73,#4fe3c9); transition: width 0.3s; }
+
+        .screen { display: none; min-height: 600px; position: relative; }
+        #auth-screen { background: url('logo.jpg') top center no-repeat; background-size: contain; background-color: #000; display: block; }
+        #intro-screen { background: url('logo.jpg') top center no-repeat; background-size: contain; background-color: #000; }
+        .intro-layout { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 24px 24px 8px; }
+        #town-screen { background: url('town 1.jpg') center; background-size: cover; }
+        #forest-screen { background: url('backround/encounter forest.jpg') center; background-size: cover; }
+
+        .overlay { position: absolute; inset: 0; background: rgba(4,8,16,0.72); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .panel { background: linear-gradient(160deg, var(--panel), #0a1119); padding: 22px; border: 1px solid var(--accent); border-radius: 10px; width: 90%; box-shadow: 0 8px 28px rgba(0,0,0,.65), 0 0 24px rgba(79,227,201,.08); }
+
+        /* Profile Modal */
+        #char-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-width: 1100px; background: linear-gradient(160deg, #101a28, #080d15); border: 2px solid var(--accent); border-radius: 10px; z-index: 100; padding: 20px; box-shadow: 0 0 120px rgba(0,0,0,.8), 0 0 60px rgba(79,227,201,.1); }
+        .char-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr 1fr; gap: 15px; text-align: left; }
+        .portrait-large { width: 100%; height: 300px; object-fit: cover; border: 1px solid var(--accent); border-radius: 6px; }
+        .stat-row { display:flex; justify-content:space-between; align-items:center; }
+        .lvl-line { text-align:center; color: var(--accent); margin:4px 0; letter-spacing: 1px; }
+        .summary-box { background: linear-gradient(160deg, #16202f, #0f1621); padding:10px; margin-top:8px; border:1px solid #2a3a4d; border-radius: 8px; font-size:12px; text-align:left; }
+
+        /* Paper Doll */
+        .paper-doll { background: rgba(5,10,18,0.5); border: 1px solid #23324450; border-radius: 8px; padding: 10px; display: grid; grid-template-areas: ". head ." "wpn body shd" ". boots ."; gap: 10px; justify-content: center; min-height: 300px; }
+        .eq-slot { width: 70px; height: 70px; background: #0a121c; border: 1px solid #2a3a4d; border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; transition: border-color .15s ease, box-shadow .15s ease; }
+        .eq-slot:hover { border-color: var(--accent); box-shadow: 0 0 10px rgba(79,227,201,.3); }
+        .eq-slot img { max-width: 90%; max-height: 90%; }
+        .eq-slot::after { content: attr(data-label); position: absolute; bottom: -14px; font-size: 8px; letter-spacing: 1px; color: #6e8299; }
+        .slot-shadow img { opacity: 0.3; }
+
+        .list-box { background: #060a12; border: 1px solid var(--accent); border-radius: 8px; padding: 10px; height: 340px; overflow-y: auto; font-size: 12px; }
+        .skill-item { border-bottom: 1px solid #1c2836; padding: 8px 4px; margin-bottom: 4px; border-radius: 4px; transition: background .15s ease; }
+        .skill-item:hover { background: rgba(79,227,201,.08); }
+        .list-box::-webkit-scrollbar, .log::-webkit-scrollbar { width: 8px; }
+        .list-box::-webkit-scrollbar-track, .log::-webkit-scrollbar-track { background: #060a12; }
+        .list-box::-webkit-scrollbar-thumb, .log::-webkit-scrollbar-thumb { background: #1e5f56; border-radius: 4px; border: 1px solid var(--accent); }
+
+        /* Shop */
+        .shop-cat { color: var(--accent); border-bottom: 1px solid var(--accent-dim); margin: 20px 0 12px; text-align: left; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; width: 100%; font-weight: normal; opacity: 0.95; }
+        .shop-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+        .item-card { background: linear-gradient(160deg, #16202f 0%, #0a0f18 100%); border: 2px solid #2a3a4d; border-radius: 10px; padding: 12px 10px 10px; width: 140px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: transform .15s ease, box-shadow .15s ease; }
+        .class-card { background: linear-gradient(160deg, #16202f 0%, #0a0f18 100%); border: 2px solid #2a3a4d; border-radius: 10px; padding: 14px; width: 150px; text-align: center; transition: transform .15s ease, box-shadow .15s ease; }
+        .class-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,.55); border-color: var(--accent); }
+        .item-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,.55); }
+        .item-card img { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+        .item-name { font-size: 12px; line-height: 1.3; min-height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .item-stat { font-size: 10px; padding: 2px 9px; border-radius: 10px; letter-spacing: 0.5px; }
+        .item-stat.atk { color: #ff9478; background: rgba(255,111,60,.12); border: 1px solid rgba(255,148,120,.4); }
+        .item-stat.def { color: #6de3b0; background: rgba(39,174,96,.12); border: 1px solid rgba(109,227,176,.4); }
+        .item-price { margin-top: 3px; width: 100%; font-size: 12px; padding: 6px 4px; }
+
+        .item-card.common { border-color: #5a7185 !important; }
+        .item-card.rare { border-color: #4aa3e8 !important; box-shadow: 0 0 10px rgba(74,163,232,.35); }
+        .item-card.unique { border-color: var(--violet) !important; box-shadow: 0 0 10px rgba(167,139,250,.4); }
+        .item-card.legendary { border-color: var(--gold) !important; box-shadow: 0 0 14px rgba(242,201,76,.5); }
+        .item-card.locked { border-color: #8b2f3a !important; box-shadow: 0 0 8px rgba(139,47,58,.4); opacity: .7; }
+        .item-card.locked img { filter: grayscale(75%) brightness(.65); }
+        .item-card.locked:hover { transform: none; box-shadow: 0 0 8px rgba(139,47,58,.4); }
+        .item-lock { margin-top: 3px; width: 100%; font-size: 10px; color: #ff8b93; border: 1px solid #8b2f3a; border-radius: 4px; padding: 6px 4px; background: rgba(139,47,58,.15); letter-spacing: .5px; text-transform: uppercase; }
+        .item-card.rare:hover { box-shadow: 0 0 16px rgba(74,163,232,.55); }
+        .item-card.unique:hover { box-shadow: 0 0 16px rgba(167,139,250,.6); }
+        .item-card.legendary:hover { box-shadow: 0 0 20px rgba(242,201,76,.7); }
+
+        .rtxt-common { color: #b9c6d4; }
+        .rtxt-rare { color: #6cb8f2; }
+        .rtxt-unique { color: #c1abf9; }
+        .rtxt-legendary { color: #f5d876; text-shadow: 0 0 6px rgba(242,201,76,.55); }
+
+        button {
+            background: linear-gradient(180deg, #1c2a38, #0e161f);
+            color: var(--accent);
+            border: 1px solid #3a5264;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -2px 4px rgba(0,0,0,.5), 0 2px 4px rgba(0,0,0,.4);
+            padding: 9px 18px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: Georgia, serif;
+            letter-spacing: 0.03em;
+            border-radius: 4px;
+            text-shadow: 0 1px 1px rgba(0,0,0,.6);
+            transition: transform .12s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+            position: relative;
+        }
+        button::before, button::after {
+            content: '';
+            position: absolute;
+            width: 4px; height: 4px;
+            background: var(--accent);
+            opacity: .45;
+            border-radius: 50%;
+            box-shadow: 0 0 2px rgba(79,227,201,.6);
+            pointer-events: none;
+        }
+        button::before { top: 3px; left: 3px; }
+        button::after { bottom: 3px; right: 3px; }
+        button:hover {
+            background: linear-gradient(180deg, var(--accent), #2a9c86);
+            color: #06110e;
+            text-shadow: none;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -2px 4px rgba(0,0,0,.25), 0 0 14px rgba(79,227,201,.5);
+            transform: translateY(-1px);
+        }
+        button:active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0,0,0,.6); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        button:disabled::before, button:disabled::after { display: none; }
+        .log { height: 100px; overflow-y: scroll; background: #060a12; color: #f2c94c; padding: 10px; text-align: left; font-family: monospace; border: 1px solid var(--accent); border-radius: 6px; font-size: 12px; }
+
+        /* Rarity (shared by eq-slots and item-cards) */
+        .common { border-color: #5a7185 !important; } .rare { border-color: #4aa3e8 !important; }
+        .unique { border-color: var(--violet) !important; } .legendary { border-color: var(--gold) !important; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Static Header -->
+    <div id="global-header" class="global-header" style="display:none;">
+        <div class="resource-group">
+            <div class="bar-container">HP: <span id="h-hp-t"></span><div class="bar"><div id="h-hp-f" class="hp-fill"></div></div></div>
+            <div class="bar-container">MP: <span id="h-mp-t"></span><div class="bar"><div id="h-mp-f" class="mana-fill"></div></div></div>
+            <div class="bar-container">XP: <span id="h-xp-t"></span>/<span id="h-xp-max"></span><div class="bar"><div id="h-xp-f" class="xp-fill"></div></div></div>
+        </div>
+        <div><strong id="h-name-disp"></strong> | <span id="h-gold-t"></span>G | <span id="h-dist-t"></span>m</div>
+        <button onclick="openProfile()">CHARACTER</button>
+    </div>
+
+    <!-- Auth (sign up / log in) — shown first, before any character is visible -->
+    <div id="auth-screen" class="screen"><div class="intro-layout">
+        <div class="panel" style="max-width:380px; background: rgba(18,27,43,0.85); backdrop-filter: blur(3px);">
+            <h2 style="margin-top:0; color:var(--accent);">Emberwood</h2>
+            <p style="font-size:12px; opacity:.75; margin-top:-8px;">Sign in to save your heroes to the cloud.</p>
+            <input type="email" id="auth-email" placeholder="Email" style="width:100%; padding:10px; margin-bottom:8px; box-sizing:border-box; background:#0a121c; border:1px solid #2a3a4d; color:var(--parchment,#cfd8e6); border-radius:4px;">
+            <input type="password" id="auth-password" placeholder="Password" style="width:100%; padding:10px; margin-bottom:14px; box-sizing:border-box; background:#0a121c; border:1px solid #2a3a4d; color:#cfd8e6; border-radius:4px;">
+            <button onclick="handleLogIn()">LOG IN</button>
+            <button onclick="handleSignUp()">SIGN UP</button>
+            <p id="auth-status" style="font-size:12px; margin-top:12px; min-height:16px;"></p>
+        </div>
+    </div></div>
+
+    <!-- Intro -->
+    <div id="intro-screen" class="screen"><div class="intro-layout">
+        <div class="panel" style="max-width:560px; background: rgba(18,27,43,0.72); backdrop-filter: blur(3px);">
+            <p style="font-size:13px; line-height:1.6; text-align:left; opacity:.9;">
+                Something is waking beneath Emberwood. Wolves run mad on the old roads, goblin raiders push toward
+                town, and battlefields long grown over are giving up their dead. The town of <b>Ashmere</b> can't spare
+                soldiers of its own — so it's counting on you. Choose your path as a <b>Fighter</b>, <b>Archer</b>, or
+                <b>Mage</b>, gear up, and find out what's stirring in the dark before the forest remembers what it used to be.
+            </p>
+            <hr style="border-color:var(--accent-dim); margin:16px 0;">
+            <div id="roster-list"></div>
+            <br><button onclick="startSetup()" style="padding:16px 50px; font-size:18px;">NEW CHARACTER</button>
+            <br><br><button onclick="handleLogOut()" style="font-size:11px; opacity:.6;">LOG OUT</button>
+        </div>
+    </div></div>
+
+    <!-- Setup (3 Steps) -->
+    <div id="setup-screen" class="screen"><div class="overlay"><div class="panel">
+        <div id="step-1"><h2>Choose Your Path</h2>
+            <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap; max-width:520px; margin:0 auto;">
+                <div class="class-card">
+                    <b style="color:var(--accent); letter-spacing:1px;">FIGHTER</b>
+                    <p style="font-size:11px; opacity:.85; margin:8px 0; line-height:1.4;">Steel and grit. You go where the fighting is worst — and make sure you're the one still standing.</p>
+                    <button onclick="pickClass('Fighter')">CHOOSE</button>
+                </div>
+                <div class="class-card">
+                    <b style="color:var(--accent); letter-spacing:1px;">ARCHER</b>
+                    <p style="font-size:11px; opacity:.85; margin:8px 0; line-height:1.4;">You've hunted deeper into Emberwood than most dare. You know its paths, and its silence, better than anyone.</p>
+                    <button onclick="pickClass('Archer')">CHOOSE</button>
+                </div>
+                <div class="class-card">
+                    <b style="color:var(--accent); letter-spacing:1px;">MAGE</b>
+                    <p style="font-size:11px; opacity:.85; margin:8px 0; line-height:1.4;">You've felt the Ember's pull for years — a hum at the edge of your dreams. Now you mean to answer it.</p>
+                    <button onclick="pickClass('Mage')">CHOOSE</button>
+                </div>
+            </div>
+        </div>
+        <div id="step-2" style="display:none;">
+            <h2>Step 2: Gender</h2>
+            <p id="class-stat-tip" style="font-size:12px; line-height:1.6; max-width:420px; margin:0 auto 14px; opacity:.85; text-align:left;"></p>
+            <img id="set-m" onclick="pickGender('m')" style="width:160px; cursor:pointer; border:2px solid #444; margin:10px;"><img id="set-f" onclick="pickGender('f')" style="width:160px; cursor:pointer; border:2px solid #444; margin:10px;">
+        </div>
+        <div id="step-3" style="display:none;"><h2>Step 3: Name</h2><input type="text" id="hero-name-input" maxlength="12" style="padding:10px;"><br><br><button onclick="goToStats()">NEXT</button></div>
+        <div id="step-4" style="display:none;">
+            <h2>Step 4: Assign Stats</h2>
+            <p style="font-size:12px; opacity:.8;">Every hero starts at 1 in each stat. Spend your points where you want — points remaining: <b id="stat-points-left">9</b></p>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:center; margin:14px 0;">
+                <div style="width:220px; display:flex; justify-content:space-between; align-items:center;">STR (Attack) <span><button onclick="adjStat('str',-1)">-</button> <b id="alloc-str">1</b> <button onclick="adjStat('str',1)">+</button></span></div>
+                <div style="width:220px; display:flex; justify-content:space-between; align-items:center;">DEX (Accuracy) <span><button onclick="adjStat('dex',-1)">-</button> <b id="alloc-dex">1</b> <button onclick="adjStat('dex',1)">+</button></span></div>
+                <div style="width:220px; display:flex; justify-content:space-between; align-items:center;">INT (Magic/Mana) <span><button onclick="adjStat('int',-1)">-</button> <b id="alloc-int">1</b> <button onclick="adjStat('int',1)">+</button></span></div>
+                <div style="width:220px; display:flex; justify-content:space-between; align-items:center;">CON (HP) <span><button onclick="adjStat('con',-1)">-</button> <b id="alloc-con">1</b> <button onclick="adjStat('con',1)">+</button></span></div>
+                <div style="width:220px; display:flex; justify-content:space-between; align-items:center;">LUK (Crit/Loot) <span><button onclick="adjStat('luk',-1)">-</button> <b id="alloc-luk">1</b> <button onclick="adjStat('luk',1)">+</button></span></div>
+            </div>
+            <button onclick="finalizeHero()">BEGIN</button>
+        </div>
+    </div></div></div>
+
+    <!-- Story intro (shown once, right after character creation) -->
+    <div id="story-screen" class="screen"><div class="overlay"><div class="panel" style="max-width:520px;">
+        <h2 style="color:var(--accent); margin-top:0;">The Rusty Kettle Tavern</h2>
+        <p style="font-size:13px; line-height:1.6; text-align:left; opacity:.9;">
+            The innkeeper — an old man with a scar-notched ear — slides a mug your way before you've even sat down.
+            <br><br>
+            "New face. Here for the notice board, I'd wager." He nods toward the door. "Ember's been restless.
+            Wolves gone half-mad on the north road, goblin raiders pushing in from the hollow, and — gods help us —
+            the old battlefield past the ridge is giving up its dead again. Skeletons, if you can believe it."
+            <br><br>
+            He leans in. "Nobody knows what's waking it after all these centuries. Could be nothing. Could be
+            something worse than nothing. Either way, Ashmere's guard is stretched thin, and the town's offering
+            what coin and gear it can spare to anyone willing to look into it."
+            <br><br>
+            He straightens up, wiping the counter. "So. You in — or are you just here for the ale?"
+        </p>
+        <br><button onclick="showScreen('town-screen'); updateUI();">HEAD INTO TOWN</button>
+    </div></div></div>
+
+    <!-- Town -->
+    <div id="town-screen" class="screen"><div class="overlay"><div class="panel"><h2>Ashmere — Town Square</h2><p style="font-size:11px; opacity:.7; margin-top:-8px;">The last outpost before Emberwood's tree line.</p><button style="background:#27ae60; color:white; padding:15px;" onclick="enterForest()">ENTER FOREST</button><br><button onclick="showScreen('market-screen')">MARKET</button><button onclick="showScreen('tavern-screen')">TAVERN</button><button onclick="showScreen('quest-screen')">NOTICE BOARD</button></div></div></div>
+
+    <!-- Notice Board (Quests) -->
+    <div id="quest-screen" class="screen"><div class="overlay"><div class="panel" style="max-width:560px;">
+        <h3 style="margin-top:0;">Ashmere Notice Board</h3>
+        <div id="quest-list" style="max-height:420px; overflow-y:auto; text-align:left;"></div>
+        <br><button onclick="showScreen('town-screen')">BACK</button>
+    </div></div></div>
+
+    <!-- Market -->
+    <div id="market-screen" class="screen"><div class="overlay"><div class="panel"><h3>Market</h3><div id="shop-container" style="max-height:400px; overflow-y:auto;"></div><br><button onclick="showScreen('town-screen')">BACK</button></div></div></div>
+
+    <!-- Tavern -->
+    <div id="tavern-screen" class="screen"><div class="overlay"><div class="panel"><h3>Tavern</h3><button onclick="rest()">REST (15G)</button><button onclick="showScreen('town-screen')">BACK</button></div></div></div>
+
+    <!-- Forest & Combat -->
+    <!-- Map -->
+    <div id="map-screen" class="screen"><div class="overlay"><div class="panel" style="max-width:950px;">
+        <h3 style="margin-top:0;">Emberwood — Known Lands</h3>
+        <div id="map-container" style="display:flex; justify-content:center;"></div>
+        <br><button onclick="showScreen('forest-screen')">BACK</button>
+    </div></div></div>
+
+    <div id="forest-screen" class="screen"><div class="overlay">
+        <div id="explore-ui" class="panel">
+            <h4 id="coord-text">Location: 0,0</h4>
+            <div id="forest-log" class="log">You step past the tree line. Somewhere ahead, the Ember hums.</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; width:150px; margin:auto;">
+                <div></div><button onclick="move(0,1)">N</button><div></div>
+                <button onclick="move(-1,0)">W</button><button id="city-btn" onclick="tryReturnToCity()">CITY</button><button onclick="move(1,0)">E</button>
+                <div></div><button onclick="move(0,-1)">S</button><div></div>
+            </div>
+            <br><button onclick="showScreen('map-screen')">MAP</button> <button onclick="useCampKit()">MAKE CAMP (<span id="p-camp"></span>)</button> <button onclick="useReturnScroll()">RETURN SCROLL (<span id="p-scroll"></span>)</button>
+        </div>
+        <div id="combat-ui" class="panel" style="display:none;">
+            <div style="display:flex; justify-content:space-around; align-items:center;">
+                <img id="c-h-img" width="220">
+                <div style="font-size:20px;">VS</div>
+                <div><img id="c-e-img" width="110"><div class="bar"><div id="e-hp-f" class="hp-fill"></div></div><small id="e-name"></small></div>
+            </div>
+            <div id="combat-log" class="log"></div>
+
+            <div id="combat-menu-main">
+                <button id="atk-btn" onclick="attack()">ATTACK</button>
+                <button onclick="openCombatMenu('skills')">SKILLS</button>
+                <button onclick="openCombatMenu('items')">ITEMS</button>
+                <button onclick="attemptFlee()">RUN</button>
+            </div>
+            <div id="combat-menu-skills" style="display:none;"></div>
+            <div id="combat-menu-items" style="display:none;"></div>
+        </div>
+    </div></div>
+
+    <!-- PROFILE MODAL -->
+    <div id="char-menu">
+        <h2 style="border-bottom:2px solid var(--gold); margin:0 0 10px 0;">Hero Profile</h2>
+        <div class="char-grid">
+            <div><!-- Column 1 -->
+                <img id="m-portrait" class="portrait-large">
+                <p class="lvl-line">Level <span id="m-lvl"></span> — <span id="m-typename"></span></p>
+                <div style="background:#101a28; padding:8px; margin-top:5px; border:1px solid #2a3a4d; border-radius:6px; font-size:11px; text-align:left;">
+                    STR: <span id="m-str"></span> <button onclick="upgradeStat('str')" id="btn-str">+</button> | DEX: <span id="m-dex"></span> <button onclick="upgradeStat('dex')" id="btn-dex">+</button><br>
+                    INT: <span id="m-int"></span> <button onclick="upgradeStat('int')" id="btn-int">+</button> | CON: <span id="m-con"></span> <button onclick="upgradeStat('con')" id="btn-con">+</button><br>
+                    LUK: <span id="m-luk"></span> <button onclick="upgradeStat('luk')" id="btn-luk">+</button>
+                    <p style="color:var(--gold); margin:2px;">Stat Points: <span id="m-sp"></span></p>
+                </div>
+                <div id="m-summary" class="summary-box"></div>
+            </div>
+            <div><!-- Column 2 -->
+                <h4 style="text-align:center; margin:0;">EQUIPMENT</h4>
+                <div class="paper-doll">
+                    <div class="eq-slot" style="grid-area: head;" data-label="HEAD" id="slot-head"></div>
+                    <div class="eq-slot" style="grid-area: wpn;" data-label="WEAPON" id="slot-wpn"></div>
+                    <div class="eq-slot" style="grid-area: body;" data-label="BODY" id="slot-body"></div>
+                    <div class="eq-slot" style="grid-area: shd;" data-label="SHIELD" id="slot-shd"></div>
+                    <div class="eq-slot" style="grid-area: boots;" data-label="BOOTS" id="slot-boots"></div>
+                </div>
+                <h4 style="margin:10px 0 6px;">QUEST LOG</h4>
+                <div id="m-quest-log" class="list-box" style="height:120px;"></div>
+            </div>
+            <div><!-- Column 3 -->
+                <h4 style="margin:0;">SKILLS (<span id="m-skp"></span> SP)</h4>
+                <div id="m-skills-list" class="list-box"></div>
+            </div>
+            <div><!-- Column 4 -->
+                <h4 style="margin:0;">BACKPACK</h4>
+                <div id="m-bag" class="list-box"></div>
+            </div>
+        </div>
+        <br><button onclick="closeProfile()">CLOSE</button>
+        <button onclick="resetGame()" style="position:absolute; bottom:16px; left:20px; background:linear-gradient(180deg,#c0392b,#8b2f3a); color:#fff; border-color:#8b2f3a;">DELETE CHARACTER</button>
+    </div>
+
+    <!-- Generic dialogue modal — used by quest givers for multi-line, branching conversations -->
+    <div id="dialogue-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; max-width:480px; background:linear-gradient(160deg,#101a28,#080d15); border:2px solid var(--accent); border-radius:10px; z-index:150; padding:20px; box-shadow:0 0 100px rgba(0,0,0,.8);">
+        <h3 id="dlg-speaker" style="margin:0 0 10px; color:var(--accent);"></h3>
+        <p id="dlg-text" style="font-size:13px; line-height:1.6; text-align:left; min-height:60px;"></p>
+        <div id="dlg-actions" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+    // ============ SUPABASE (cloud save) ============
+    const SUPABASE_URL = "https://oumdjrwwhpcinaezyluy.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_jDzoEz6ihG9Np8QB7rD_2A_j9O5C3B9";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentUser = null;
+
+    // ============ STATE ============
+    // ============ AUTH (real accounts, cloud-saved characters) ============
+    async function initAuth() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            currentUser = session.user;
+            showScreen('intro-screen');
+            renderIntroScreen();
+        } else {
+            showScreen('auth-screen');
+        }
+    }
+    function setAuthStatus(msg, ok) {
+        const el = document.getElementById('auth-status');
+        el.innerText = msg;
+        el.style.color = ok ? '#6de3b0' : '#ff8b93';
+    }
+    async function handleSignUp() {
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+        if (!email || !password) { setAuthStatus("Enter an email and password."); return; }
+        setAuthStatus("Creating account...");
+        const { error } = await sb.auth.signUp({ email, password });
+        if (error) { setAuthStatus(error.message); return; }
+        setAuthStatus("Account created! Check your email to confirm, then log in.", true);
+    }
+    async function handleLogIn() {
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+        if (!email || !password) { setAuthStatus("Enter an email and password."); return; }
+        setAuthStatus("Signing in...");
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) { setAuthStatus(error.message); return; }
+        currentUser = data.user;
+        showScreen('intro-screen');
+        renderIntroScreen();
+    }
+    async function handleLogOut() {
+        await sb.auth.signOut();
+        currentUser = null; hero = null; currentHeroKey = null;
+        location.reload();
+    }
+    // Checks name availability GLOBALLY (across every player) via a Postgres
+    // function — a plain table SELECT can't see other users' rows under RLS.
+    async function nameTaken(name) {
+        const { data, error } = await sb.rpc('is_name_taken', { check_name: name.trim() });
+        if (error) { console.error(error); return true; } // fail closed — don't let a broken check create a collision
+        return !!data;
+    }
+
+    function defaultHero(name, type, img, stats) {
+        stats = stats || {str:1, dex:1, int:1, con:1, luk:1};
+        return {
+            name, lvl:1, xp:0, gold:150, loot:0, x:0, y:0, sp:0, skp:0,
+            pots_hp_s:2, pots_hp_m:0, pots_hp_l:0, pots_mp_s:0, pots_mp_m:1, pots_mp_l:0, campKits:0, returnScrolls:1,
+            str:stats.str, dex:stats.dex, int:stats.int, con:stats.con, luk:stats.luk,
+            hp:stats.con*10, mana:stats.int*5, type, img, eq:{}, skills:{},
+            inventory:[], materials:{}, nextUid:0, quests:{}, storyFlags:{}
+        };
+    }
+
+    // Brings an older save up to the current data shape (adds fields that
+    // didn't exist yet when it was written, without touching anything else).
+    function applyMigrations(h) {
+        if (h.pots_hp !== undefined && h.pots_hp_s === undefined) { h.pots_hp_s = h.pots_hp; }
+        h.pots_hp_s = h.pots_hp_s || 0; h.pots_hp_m = h.pots_hp_m || 0; h.pots_hp_l = h.pots_hp_l || 0;
+        if (h.pots_mp !== undefined && h.pots_mp_m === undefined) { h.pots_mp_m = h.pots_mp; }
+        h.pots_mp_s = h.pots_mp_s || 0; h.pots_mp_m = h.pots_mp_m || 0; h.pots_mp_l = h.pots_mp_l || 0;
+        h.campKits = h.campKits || 0;
+        h.returnScrolls = h.returnScrolls || 0;
+        h.inventory = h.inventory || [];
+        h.materials = h.materials || {};
+        h.quests = h.quests || {};
+        h.storyFlags = h.storyFlags || {};
+        h.nextUid = h.nextUid || 0;
+        h.luk = h.luk || 1;
+        return h;
+    }
+
+    let currentHeroKey = null;
+    let hero = null;
+    let tempName = "";
+    let allocStats = {str:1, dex:1, int:1, con:1, luk:1};
+    let allocLeft = 9;
+
+    const MATERIAL_SELL_PRICE = { "Wolf Hide": 5, "Broken Goblin Dagger": 12, "Goblin Bones": 8 };
+    let enemy = {}; let tempClass = "";
+
+    const s1h = [
+        {n:"Recruit's Steel", c:60, p:5, r:"common", minLvl:1, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Recruit's Steel.png"},
+        {n:"Gilded Noble Blade", c:250, p:12, r:"rare", minLvl:5, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Gilded Noble Blade.png"},
+        {n:"Stormweaver's Edge", c:700, p:25, r:"unique", minLvl:10, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Stormweaver's Edge.png"},
+        {n:"Sunstrider's Lionheart", c:2000, p:60, r:"legendary", minLvl:15, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Sunstrider's Lionheart.jpg"}
+    ];
+    const s2h = [
+        {n:"Wanderer's Greatsword", c:120, p:15, r:"common", minLvl:1, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Wanderer's Greatsword.jpg"},
+        {n:"Onyx Ravenblade", c:450, p:35, r:"rare", minLvl:5, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Onyx Ravenblade.jpg"},
+        {n:"Voidweaver's Sorrow", c:1200, p:70, r:"unique", minLvl:10, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Voidweaver's Sorrow.jpg"},
+        {n:"Seraphim's Verdict", c:4500, p:160, r:"legendary", minLvl:15, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Seraphim's Verdict.jpg"}
+    ];
+    const bows = [
+        {n:"Simple Ashwood Bow", c:100, p:14, r:"common", minLvl:1, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Simple Ashwood Bow.png"},
+        {n:"Veteran's Reflex Bow", c:380, p:32, r:"rare", minLvl:5, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Veteran's Reflex Bow.png"},
+        {n:"Whispering Wind-Bow", c:1000, p:65, r:"unique", minLvl:10, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Whispering Wind-Bow.png"},
+        {n:"Sunflare Apollo-Bow", c:3800, p:150, r:"legendary", minLvl:15, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Sunflare Apollo-Bow.png"}
+    ];
+    const crossbows = [
+        {n:"Rusty Iron Crossbow", c:55, p:6, r:"common", minLvl:1, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Rusty Iron Crossbow.jpg"},
+        {n:"Gilded Marksman's Arbalest", c:230, p:14, r:"rare", minLvl:5, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Gilded Marksman's Arbalest.jpg"},
+        {n:"Arcane Bolt-Launcher", c:680, p:28, r:"unique", minLvl:10, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Arcane Bolt-Launcher.jpg"},
+        {n:"Heavenly Sky-Piercer", c:2600, p:68, r:"legendary", minLvl:15, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Heavenly Sky-Piercer.jpg"}
+    ];
+    const shields = [
+        { n: "Battered Buckler", c: 40, d: 3, r: "common", minLvl:1, isShield:true, cls:["Fighter"], img: "items/shild/Battered Recruit's Buckler.png" },
+        { n: "Crusader Shield", c: 180, d: 8, r: "rare", minLvl:5, isShield:true, cls:["Fighter"], img: "items/shild/Verdant Crusader's Shield.png" },
+        { n: "Lionheart Bastion", c: 600, d: 15, r: "unique", minLvl:10, isShield:true, cls:["Fighter"], img: "items/shild/Gilded Lionheart Bastion.png" },
+        { n: "Celestial Aegis", c: 3500, d: 35, r: "legendary", minLvl:15, isShield:true, cls:["Fighter"], img: "items/shild/Celestial Seraph's Aegis.png" }
+    ];
+    const heavyArmor = [
+        {n:"Battleworn Vest", c:80, d:4, r:"common", minLvl:1, cls:["Fighter"], img:"items/h.armor/Battleworn Vest.jpg"},
+        {n:"Polished Steel Cuirass", c:320, d:10, r:"rare", minLvl:5, cls:["Fighter"], img:"items/h.armor/Polished Steel Cuirass.png"},
+        {n:"Runeforged Dragon Plate", c:900, d:22, r:"unique", minLvl:10, cls:["Fighter"], img:"items/h.armor/Runeforged Dragon Plate.png"},
+        {n:"Seraphic Aureate Plate", c:2800, d:45, r:"legendary", minLvl:15, cls:["Fighter"], img:"items/h.armor/Seraphic Aureate Plate.png"}
+    ];
+    const staves = [
+        {n:"Gnarled Elderwood Staff", c:110, p:14, r:"common", minLvl:1, hands:2, wt:"staff", cls:["Mage"], img:"items/stuff/Gnarled Elderwood Staff.jpg"},
+        {n:"Suncore Emberstaff", c:400, p:32, r:"rare", minLvl:5, hands:2, wt:"staff", cls:["Mage"], img:"items/stuff/Suncore Emberstaff.jpg"},
+        {n:"Glacial Soul-Twist Staff", c:1050, p:68, r:"unique", minLvl:10, hands:2, wt:"staff", cls:["Mage"], img:"items/stuff/Glacial Soul-Twist Staff.jpg"},
+        {n:"Nova Star-God Staff", c:3900, p:155, r:"legendary", minLvl:15, hands:2, wt:"staff", cls:["Mage"], img:"items/stuff/Nova Star-God Staff.jpg"}
+    ];
+    const mArmor = [
+        {n:"Scout's Leather Tunic", c:75, d:3, r:"common", minLvl:1, cls:["Archer"], img:"items/M.armor/Scout's Leather Tunic.png"},
+        {n:"Brigandine of the Deep Woods", c:300, d:8, r:"rare", minLvl:5, cls:["Archer"], img:"items/M.armor/Brigandine of the Deep Woods.jpg"},
+        {n:"Royal Night-Watch Armor", c:850, d:18, r:"unique", minLvl:10, cls:["Archer"], img:"items/M.armor/Royal Night-Watch Armor.png"},
+        {n:"Aetherial Astral Plate", c:2600, d:40, r:"legendary", minLvl:15, cls:["Archer"], img:"items/M.armor/Aetherial Astral Plate.jpg"}
+    ];
+    const robes = [
+        {n:"Neophyte's Cotton Robe", c:75, d:3, r:"common", minLvl:1, cls:["Mage"], img:"items/robe/Neophyte's Cotton Robe.jpg"},
+        {n:"Alchemist's Velvet Tunic", c:300, d:8, r:"rare", minLvl:5, cls:["Mage"], img:"items/robe/Alchemist's Velvet Tunic.jpg"},
+        {n:"High Magus Runegown", c:850, d:18, r:"unique", minLvl:10, cls:["Mage"], img:"items/robe/High Magus Runegown.jpg"},
+        {n:"Celestial Nebula Raiment", c:2600, d:40, r:"legendary", minLvl:15, cls:["Mage"], img:"items/robe/Celestial Nebula Raiment.jpg"}
+    ];
+    const helms = [
+        {n:"Recruit's Iron Visage", c:50, d:3, r:"common", minLvl:1, cls:["Fighter"], img:"items/helm/Recruit's Iron Visage.png"},
+        {n:"Gilded Noble Great-Helm", c:220, d:7, r:"rare", minLvl:5, cls:["Fighter"], img:"items/helm/Gilded Noble Great-Helm.png"},
+        {n:"Stormweaver's Horned Aegis", c:650, d:14, r:"unique", minLvl:10, cls:["Fighter"], img:"items/helm/Stormweaver’s Horned Aegis.png"},
+        {n:"Celestial Seraph's Crown", c:2400, d:30, r:"legendary", minLvl:15, cls:["Fighter"], img:"items/helm/Celestial Seraph’s Crown.png"}
+    ];
+    const hoods = [
+        {n:"Traveler's Leather Hood", c:45, d:2, r:"common", minLvl:1, cls:["Archer"], img:"items/hood/Traveler's Leather Hood.jpg"},
+        {n:"Ranger's Reinforced Cowl", c:190, d:6, r:"rare", minLvl:5, cls:["Archer"], img:"items/hood/Ranger's Reinforced Cowl.jpg"},
+        {n:"Occultist's Runic Mask", c:600, d:13, r:"unique", minLvl:10, cls:["Archer"], img:"items/hood/Occultist's Runic Mask.png"},
+        {n:"Grand Avian God-Mask", c:2200, d:28, r:"legendary", minLvl:15, cls:["Archer"], img:"items/hood/Grand Avian God-Mask.png"}
+    ];
+    const hats = [
+        {n:"Novice's Pointed Cap", c:45, d:2, r:"common", minLvl:1, cls:["Mage"], img:"items/hat/Novice's Pointed Cap.jpg"},
+        {n:"Scholar's Velvet Hood", c:190, d:6, r:"rare", minLvl:5, cls:["Mage"], img:"items/hat/Scholar's Velvet Hood.jpg"},
+        {n:"Enchanter's Runecap", c:600, d:13, r:"unique", minLvl:10, cls:["Mage"], img:"items/hat/Enchanter's Runecap.jpg"},
+        {n:"Ascended Seraph's Crown-Hat", c:2200, d:28, r:"legendary", minLvl:15, cls:["Mage"], img:"items/hat/Ascended Seraph's Crown-Hat.jpg"}
+    ];
+    const boots = [
+        {n:"Recruit's Leather Treads", c:45, d:2, r:"common", minLvl:1, cls:["Fighter"], img:"items/h.boots/Recruit's Leather Treads.png"},
+        {n:"Vanguard's Plated Boots", c:200, d:6, r:"rare", minLvl:5, cls:["Fighter"], img:"items/h.boots/Vanguard's Plated Boots.png"},
+        {n:"Stormweaver's Emerald Greaves", c:580, d:13, r:"unique", minLvl:10, cls:["Fighter"], img:"items/h.boots/Stormweaver's Emerald Greaves.png"},
+        {n:"Celestial Seraph's Flight", c:2200, d:28, r:"legendary", minLvl:15, cls:["Fighter"], img:"items/h.boots/Celestial Seraph's Flight.png"}
+    ];
+    const mBoots = [
+        {n:"Wanderer's Sturdy Boots", c:45, d:2, r:"common", minLvl:1, cls:["Archer"], img:"items/m.boots/Wanderer's Sturdy Boots.jpg"},
+        {n:"Forest Guardian's Greaves", c:190, d:6, r:"rare", minLvl:5, cls:["Archer"], img:"items/m.boots/Forest Guardian's Greaves.png"},
+        {n:"Shadowstep Teal Walkers", c:560, d:13, r:"unique", minLvl:10, cls:["Archer"], img:"items/m.boots/Shadowstep Teal Walkers.png"},
+        {n:"Dragonscale Dragon-Slayers", c:2100, d:27, r:"legendary", minLvl:15, cls:["Archer"], img:"items/m.boots/Dragonscale Dragon-Slayers.png"}
+    ];
+    const mageBoots = [
+        {n:"Apprentice's Felt Treads", c:45, d:2, r:"common", minLvl:1, cls:["Mage"], img:"items/shoes/Apprentice's Felt Treads.jpg"},
+        {n:"Spellweaver's Velvet Boots", c:190, d:6, r:"rare", minLvl:5, cls:["Mage"], img:"items/shoes/Spellweaver's Velvet Boots.jpg"},
+        {n:"Arcane Runestride Boots", c:560, d:13, r:"unique", minLvl:10, cls:["Mage"], img:"items/shoes/Arcane Runestride Boots.png"},
+        {n:"Stellar Void-Walkers", c:2100, d:27, r:"legendary", minLvl:15, cls:["Mage"], img:"items/shoes/Stellar Void-Walkers.png"}
+    ];
+
+    const SKILL_TREES = {
+        Fighter: [
+            {n:"Bash", type:"active", d:"Active: power hit dealing +10 damage, plus +5 more per level. Costs 5 MP"},
+            {n:"Shield Slam", type:"active", d:"Active — requires a 1H weapon + shield: slam your shield for +8 damage per level, with a 6%/level chance to stun the enemy. Costs 6 MP"},
+            {n:"Cleaving Strike", type:"active", d:"Active — requires a 2H weapon: a heavy overhead blow dealing +14 damage per level, the hardest single hit a Fighter has. Costs 8 MP"},
+            {n:"Sword and Shield Mastery", type:"passive", d:"+3 Attack and +5 Defense per level when wielding a 1H weapon + shield"},
+            {n:"Great Weapon Mastery", type:"passive", d:"+10 Attack per level when wielding a 2H weapon"},
+            {n:"Toughness", type:"passive", d:"+10 Max HP per level"}
+        ],
+        Archer: [
+            {n:"Double Shot", type:"active", d:"Active: fire two arrows in one turn, each rolled separately and dealing +3 damage per level. Costs 6 MP"},
+            {n:"Piercing Shot", type:"active", d:"Active — requires a bow: an aimed shot that can't miss, dealing +9 damage per level. Costs 6 MP"},
+            {n:"Rapid Reload", type:"active", d:"Active — requires a crossbow: a snap-aimed bolt with a hugely increased Critical Hit chance (+20%/level on this shot). Costs 6 MP"},
+            {n:"Longbow Mastery", type:"passive", d:"+8 Attack per level when wielding a bow (2H)"},
+            {n:"Crossbow Mastery", type:"passive", d:"+8 Attack per level when wielding a crossbow (1H)"},
+            {n:"Sharp Eye", type:"passive", d:"+5% Critical Hit chance per level (+50% damage on crit)"}
+        ],
+        Mage: [
+            {n:"Arcane Focus", type:"passive", d:"+5 Magic Attack per level — base spell power for all your spells"},
+            {n:"Fireball", type:"active", d:"Elemental — Active: fire bolt dealing Magic Attack +8/level damage. Costs 10 MP"},
+            {n:"Frost Lance", type:"active", d:"Elemental — Active: ice bolt dealing Magic Attack +5/level damage and chills the enemy, halving their next attack. Costs 10 MP"},
+            {n:"Lightning Bolt", type:"active", d:"Elemental — Active: shock bolt dealing Magic Attack +4/level damage, with +15% Critical Hit chance per level on the cast. Costs 12 MP"},
+            {n:"Mind Spike", type:"active", d:"Psychic — Active: deals Magic Attack +6/level damage, with 10%/level chance to stun the enemy for their next turn. Costs 10 MP"},
+            {n:"Psychic Drain", type:"active", d:"Psychic — Active: deals Magic Attack +5/level damage and heals you for half the damage dealt. Costs 12 MP"},
+            {n:"Mana Shield", type:"passive", d:"Buff — Passive: 10% per level of incoming damage is paid from Mana instead of HP"},
+            {n:"Arcane Ward", type:"passive", d:"Buff — Passive: +4 Defense per level"},
+            {n:"Quickened Mind", type:"passive", d:"Buff — Passive: +2 to-hit per level, applies to weapon attacks and spells alike"}
+        ]
+    };
+    const SKILL_CAP = { active: 10, passive: 5 };
+
+    window.onload = () => { initAuth(); };
+
+    async function renderIntroScreen() {
+        const list = document.getElementById('roster-list');
+        if (!list) return;
+        list.innerHTML = `<i style="opacity:.6; font-size:13px;">Loading your characters...</i>`;
+        const { data, error } = await sb.from('heroes').select('name').eq('user_id', currentUser.id).order('name');
+        if (error) { list.innerHTML = `<i style="opacity:.6; font-size:13px;">Could not load characters — try refreshing.</i>`; return; }
+        if (!data.length) {
+            list.innerHTML = `<i style="opacity:.7; font-size:13px;">No characters yet on this account — create your first hero below.</i>`;
+        } else {
+            list.innerHTML = `<div style="margin-bottom:10px; font-size:12px; opacity:.8;">Continue an existing character:</div>` +
+                data.map(r => `<button onclick="loadCharacter('${r.name.replace(/'/g,"\\'")}')" style="margin:3px;">${r.name}</button>`).join('');
+        }
+    }
+
+    async function loadCharacter(name) {
+        const { data, error } = await sb.from('heroes').select('data').eq('user_id', currentUser.id).eq('name', name).single();
+        if (error || !data) { alert("That character could not be found."); renderIntroScreen(); return; }
+        hero = applyMigrations(data.data);
+        currentHeroKey = name;
+        showScreen('town-screen'); updateUI();
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.style.display='none');
+        document.getElementById(id).style.display='block';
+        document.getElementById('global-header').style.display = (id==='intro-screen'||id==='setup-screen'||id==='story-screen'||id==='auth-screen') ? 'none' : 'flex';
+        if(id==='market-screen') renderShop();
+        if(id==='quest-screen') renderQuestBoard();
+        if(id==='map-screen') renderMap();
+    }
+
+    let tempImg = "";
+    function startSetup() { showScreen('setup-screen'); document.getElementById('step-1').style.display='block'; }
+    const CLASS_STAT_TIPS = {
+        Fighter: "A Fighter lives and dies by <b>STR</b> — it drives your Attack power directly. <b>CON</b> keeps you standing with more Max HP, and a little <b>DEX</b> helps you hit and dodge more often. LUK and INT matter far less for you.",
+        Archer: "An Archer's edge is <b>DEX</b> — it sharpens both your accuracy and your Defense. <b>STR</b> still fuels your Attack power behind the bow, and <b>LUK</b> boosts how often you land a Critical Hit.",
+        Mage: "A Mage channels power through <b>INT</b> — it fuels both your Magic Attack and your Mana pool for casting spells. <b>CON</b> keeps you alive at range, and a little <b>DEX</b> helps your spells land."
+    };
+    function pickClass(c) {
+        tempClass = c;
+        document.getElementById('step-1').style.display='none';
+        document.getElementById('step-2').style.display='block';
+        document.getElementById('set-m').src=`characters/${c}_m.jpg`;
+        document.getElementById('set-f').src=`characters/${c}_f.jpg`;
+        document.getElementById('class-stat-tip').innerHTML = `You've chosen the path of the <b style="color:var(--accent);">${c}</b>. ${CLASS_STAT_TIPS[c]}`;
+    }
+    function pickGender(g) { tempImg = `characters/${tempClass}_${g}.jpg`; document.getElementById('step-2').style.display='none'; document.getElementById('step-3').style.display='block'; }
+    async function goToStats() {
+        let n = document.getElementById('hero-name-input').value.trim();
+        if (!n) return alert("Enter a name.");
+        if (await nameTaken(n)) return alert("That name is already taken by another player. Please choose another.");
+        tempName = n;
+        allocStats = {str:1, dex:1, int:1, con:1, luk:1};
+        allocLeft = 9;
+        document.getElementById('step-3').style.display='none';
+        document.getElementById('step-4').style.display='block';
+        renderStatAlloc();
+    }
+    function renderStatAlloc() {
+        ['str','dex','int','con','luk'].forEach(s => document.getElementById('alloc-'+s).innerText = allocStats[s]);
+        document.getElementById('stat-points-left').innerText = allocLeft;
+    }
+    function adjStat(s, delta) {
+        if (delta > 0 && allocLeft <= 0) return;
+        if (delta < 0 && allocStats[s] <= 1) return;
+        allocStats[s] += delta;
+        allocLeft -= delta;
+        renderStatAlloc();
+    }
+
+    function finalizeHero() {
+        if (allocLeft > 0 && !confirm(`You still have ${allocLeft} unspent stat point(s). Begin anyway?`)) return;
+
+        currentHeroKey = tempName;
+        hero = defaultHero(tempName, tempClass, tempImg, allocStats);
+
+        save(); showScreen('story-screen');
+    }
+
+    function openProfile() { document.getElementById('char-menu').style.display='block'; renderProfile(); }
+    function closeProfile() { document.getElementById('char-menu').style.display='none'; }
+
+    function calcCombatStats() {
+        const wpn = hero.eq.wpn;
+        const shd = hero.eq.shd;
+        const hasShield = !!shd && !(wpn && wpn.hands === 2);
+
+        let atk = 5 + Math.floor((hero.str - 1) / 2);
+        let atkBreakdown = [`Base 5`, `STR mod ${Math.floor((hero.str-1)/2)}`];
+
+        if (wpn && wpn.wt !== 'staff') { atk += wpn.p; atkBreakdown.push(`${wpn.n} +${wpn.p}`); }
+        if (wpn && wpn.hands === 2 && wpn.wt === 'sword') {
+            const gwm = hero.skills['Great Weapon Mastery'] || 0;
+            if (gwm) { atk += gwm * 10; atkBreakdown.push(`Great Weapon Mastery +${gwm*10}`); }
+        }
+        if (wpn && wpn.wt === 'bow') {
+            const lbm = hero.skills['Longbow Mastery'] || 0;
+            if (lbm) { atk += lbm * 8; atkBreakdown.push(`Longbow Mastery +${lbm*8}`); }
+        }
+        if (wpn && wpn.wt === 'crossbow') {
+            const cbm = hero.skills['Crossbow Mastery'] || 0;
+            if (cbm) { atk += cbm * 8; atkBreakdown.push(`Crossbow Mastery +${cbm*8}`); }
+        }
+
+        // Magic Attack — separate power track for Mage spells, scales off INT instead of STR
+        let matk = 5 + Math.floor((hero.int - 1) / 2);
+        let matkBreakdown = [`Base 5`, `INT mod ${Math.floor((hero.int-1)/2)}`];
+        if (wpn && wpn.wt === 'staff') { matk += wpn.p; matkBreakdown.push(`${wpn.n} +${wpn.p}`); }
+        const af = hero.skills['Arcane Focus'] || 0;
+        if (af) { matk += af * 5; matkBreakdown.push(`Arcane Focus +${af*5}`); }
+
+        let def = 10 + Math.floor((hero.dex - 1) / 2);
+        let defBreakdown = [`Base 10`, `DEX mod ${Math.floor((hero.dex-1)/2)}`];
+
+        if (hero.eq.body) { def += hero.eq.body.d; defBreakdown.push(`${hero.eq.body.n} +${hero.eq.body.d}`); }
+        if (hero.eq.head) { def += hero.eq.head.d; defBreakdown.push(`${hero.eq.head.n} +${hero.eq.head.d}`); }
+        if (hero.eq.boots) { def += hero.eq.boots.d; defBreakdown.push(`${hero.eq.boots.n} +${hero.eq.boots.d}`); }
+
+        if (hasShield) {
+            def += shd.d; defBreakdown.push(`${shd.n} +${shd.d}`);
+            const ssm = hero.skills['Sword and Shield Mastery'] || 0;
+            if (ssm) {
+                atk += ssm * 3; atkBreakdown.push(`Sword and Shield Mastery +${ssm*3}`);
+                def += ssm * 5; defBreakdown.push(`Sword and Shield Mastery +${ssm*5}`);
+            }
+        }
+
+        const aw = hero.skills['Arcane Ward'] || 0;
+        if (aw) { def += aw * 4; defBreakdown.push(`Arcane Ward +${aw*4}`); }
+
+        // Rarity secondary perks — every equipped item's rarity adds "tier points"
+        // that grant small extras beyond its plain ATK/DEF. Common contributes
+        // nothing; legendary contributes the most. This is what makes rarity feel
+        // meaningful beyond the raw numbers on the item itself.
+        const RARITY_TIER = { common:0, rare:1, unique:2, legendary:4 };
+        let rarityPoints = 0;
+        ['wpn','shd','body','head','boots'].forEach(slot => {
+            if (hero.eq[slot]) rarityPoints += RARITY_TIER[hero.eq[slot].r] || 0;
+        });
+        const gearCritBonus = rarityPoints * 1.5;
+        const gearHpBonus = rarityPoints * 4;
+
+        // Critical Hit chance — Archer's Sharp Eye skill, a small universal bonus
+        // from LUK, and a bonus from the overall rarity of your equipped gear
+        const critChance = (hero.skills['Sharp Eye'] || 0) * 5 + Math.floor((hero.luk||1) / 2) + gearCritBonus;
+
+        // To-hit bonus (Mage's Quickened Mind) — applies to weapon attacks and spells alike
+        const toHitBonus = (hero.skills['Quickened Mind'] || 0) * 2;
+
+        // LUK also nudges monster loot rolls in win() — see lootChanceBonus below
+        const lootChanceBonus = (hero.luk||1);
+
+        const maxHp = hero.con * 10 + (hero.skills['Toughness'] || 0) * 10 + gearHpBonus;
+        const maxMp = hero.int * 5;
+
+        return { atk, def, matk, critChance, toHitBonus, lootChanceBonus, maxHp, maxMp, gearCritBonus, gearHpBonus, atkBreakdown, defBreakdown, matkBreakdown };
+    }
+
+    // ============ ELEMENTAL EFFECTS ============
+    // Every item above Common carries a chance at an elemental effect on top of
+    // its plain ATK/DEF — this is what actually makes rarity interesting, not
+    // just bigger numbers. Each weapon family has its own signature element;
+    // Fighter shields answer back with a defensive one.
+    const RARITY_PROC = { common:0, rare:8, unique:15, legendary:25 };
+    const RARITY_PROC_LVL = { common:0, rare:1, unique:2, legendary:3 };
+
+    // Rolled after any successful physical hit (not spells — those already have
+    // their own elemental identity). Sword = Burn, Bow/Crossbow = Poison, Staff = Shock.
+    function applyWeaponElemental() {
+        const wpn = hero.eq.wpn;
+        if (!wpn) return;
+        const chance = RARITY_PROC[wpn.r] || 0;
+        if (!chance || Math.random()*100 >= chance) return;
+        const lvl = RARITY_PROC_LVL[wpn.r] || 0;
+        if (wpn.wt === 'sword') {
+            enemy.dot = { type:'Burn', dmg: 4 + lvl*3, turns: 3 };
+            logMsg(`The ${enemy.n} catches <b>fire</b>!`);
+        } else if (wpn.wt === 'bow' || wpn.wt === 'crossbow') {
+            enemy.dot = { type:'Poison', dmg: 3 + lvl*2, turns: 4 };
+            logMsg(`The ${enemy.n} is <b>poisoned</b>!`);
+        } else if (wpn.wt === 'staff') {
+            enemy.stunned = true;
+            logMsg(`A jolt of <b>lightning</b> arcs through the ${enemy.n} — stunned!`);
+        }
+    }
+
+    // Rolled when the enemy successfully lands a hit — a rare+ shield has a
+    // chance to chill the attacker in response (Ice).
+    function applyShieldElemental() {
+        const shd = hero.eq.shd;
+        if (!shd) return;
+        const chance = RARITY_PROC[shd.r] || 0;
+        if (!chance || Math.random()*100 >= chance) return;
+        enemy.chilled = true;
+        logMsg(`Your shield flares with <b>frost</b> — the ${enemy.n} is chilled!`);
+    }
+
+    function renderProfile() {
+        document.getElementById('m-portrait').src = hero.img;
+        document.getElementById('m-typename').innerText = hero.type;
+        ['str','dex','int','con','luk','sp','skp','lvl'].forEach(s => document.getElementById('m-'+s).innerText = hero[s]);
+        renderQuestLog();
+
+        let bagHtml = `<b>Gold: ${hero.gold}G</b><hr>HP Pots — S:${hero.pots_hp_s} M:${hero.pots_hp_m} L:${hero.pots_hp_l}<br>MP Pots — S:${hero.pots_mp_s} M:${hero.pots_mp_m} L:${hero.pots_mp_l}`;
+        bagHtml += ` | Camp Kits:${hero.campKits||0}`;
+
+        bagHtml += `<hr><b>Backpack</b>`;
+        if (hero.inventory.length === 0) {
+            bagHtml += `<br><i style="opacity:.6;">Empty — buy gear at the Market</i>`;
+        } else {
+            hero.inventory.forEach(entry => {
+                const lvlTag = entry.item.minLvl ? ` <small style="opacity:.6;">(req. lvl ${entry.item.minLvl})</small>` : '';
+                bagHtml += `<div class="skill-item"><b class="rtxt-${entry.item.r}">${entry.item.n}</b>${lvlTag}<br><small style="opacity:.8;">${itemStatLine(entry.item)}</small><br><button onclick="equipItem(${entry.uid})">Equip</button></div>`;
+            });
+            bagHtml += `<small style="opacity:.55; display:block; margin-top:6px;">Selling is done at the Market.</small>`;
+        }
+
+        const matNames = Object.keys(hero.materials || {});
+        if (matNames.length) {
+            bagHtml += `<hr><b>Materials</b>`;
+            matNames.forEach(name => {
+                bagHtml += `<div class="skill-item">${name} x${hero.materials[name]}</div>`;
+            });
+        }
+        document.getElementById('m-bag').innerHTML = bagHtml;
+
+        ['head','body','wpn','shd','boots'].forEach(s => {
+            let el = document.getElementById('slot-'+s); el.className="eq-slot"; el.innerHTML="";
+            if(s==='shd' && hero.eq.wpn && hero.eq.wpn.hands===2) { el.innerHTML=`<img src="${hero.eq.wpn.img}" onerror="this.onerror=null;this.src=phImg();">`; el.classList.add('slot-shadow', hero.eq.wpn.r); }
+            else if(hero.eq[s]) { el.innerHTML=`<img src="${hero.eq[s].img}" onerror="this.onerror=null;this.src=phImg();">`; el.classList.add(hero.eq[s].r); }
+        });
+
+        const cs = calcCombatStats();
+        document.getElementById('m-summary').innerHTML =
+            `<b>ATTACK: ${cs.atk}</b><br><small>${cs.atkBreakdown.join(' | ')}</small><hr>` +
+            `<b>MAGIC ATTACK: ${cs.matk}</b><br><small>${cs.matkBreakdown.join(' | ')}</small><hr>` +
+            `<b>DEFENSE: ${cs.def}</b><br><small>${cs.defBreakdown.join(' | ')}</small><hr>` +
+            `<b>CRIT CHANCE: ${cs.critChance}%</b>` + (cs.toHitBonus ? ` | <b>TO-HIT: +${cs.toHitBonus}</b>` : '') +
+            (cs.gearCritBonus || cs.gearHpBonus ? `<br><small style="opacity:.7;">Gear rarity bonus: +${cs.gearCritBonus}% crit, +${cs.gearHpBonus} HP</small>` : '');
+
+        ['str','dex','int','con','luk'].forEach(s => document.getElementById('btn-'+s).disabled = hero.sp <= 0);
+
+        const slist = document.getElementById('m-skills-list'); slist.innerHTML = "";
+        const tree = SKILL_TREES[hero.type] || [];
+        tree.forEach(s => {
+            let l = hero.skills[s.n] || 0;
+            const cap = SKILL_CAP[s.type] || 5;
+            const atCap = l >= cap;
+            slist.innerHTML += `<div class="skill-item"><b>${s.n} (LVL ${l}/${cap})</b><br><small>${s.d}</small><br><button onclick="upSkill('${s.n}')" ${(hero.skp>0 && !atCap)?'':'disabled'}>${atCap?'MAX':'Upgrade'}</button></div>`;
+        });
+    }
+
+    // Offline-safe placeholder icon (no dependency on internet access)
+    function phImg() {
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="8" fill="#241a12" stroke="#d4af37" stroke-width="2"/><text x="28" y="35" font-size="22" fill="#d4af37" text-anchor="middle" font-family="Georgia, serif">?</text></svg>';
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    // Renders one shop card. Items whose cls[] doesn't include the hero's class
+    // are shown grayed-out with a red "class-locked" badge instead of a buy button.
+    // Describes the elemental proc a rare+ weapon/shield carries (see
+    // applyWeaponElemental/applyShieldElemental) so the player can see it
+    // before they buy or equip, not just discover it mid-fight.
+    function elementalTag(item) {
+        if (!item.r || item.r === 'common') return '';
+        const chance = RARITY_PROC[item.r] || 0;
+        if (item.wt === 'sword') return `${chance}% chance to Burn (Fire)`;
+        if (item.wt === 'bow' || item.wt === 'crossbow') return `${chance}% chance to Poison`;
+        if (item.wt === 'staff') return `${chance}% chance to Shock (stun)`;
+        if (item.slot === 'shd' || item.isShield) return `${chance}% chance to Chill attacker (Ice)`;
+        return '';
+    }
+
+    // Turns an item's raw stats into a short readable line — used in the
+    // backpack and the sell screen so gear shows what it does, not just its name.
+    function itemStatLine(item) {
+        const parts = [];
+        if (item.p) parts.push(`+${item.p} ${item.wt === 'staff' ? 'MAG' : 'ATK'}`);
+        if (item.d) parts.push(`+${item.d} DEF`);
+        const elem = elementalTag(item);
+        if (elem) parts.push(elem);
+        return parts.join(', ') || '';
+    }
+
+    function itemCard(item, statHtml, buyExpr) {
+        const allowed = item.cls.includes(hero.type);
+        const img = `<img src="${item.img}" onerror="this.onerror=null;this.src=phImg();">`;
+        const name = `<div class="item-name rtxt-${item.r}">${item.n}</div>`;
+        const lvlTag = item.minLvl ? `<div style="font-size:10px; opacity:.6;">Req. level ${item.minLvl}</div>` : '';
+        const elem = elementalTag(item);
+        const elemTag = elem ? `<div style="font-size:10px; color:#f7a84e;">${elem}</div>` : '';
+        if (!allowed) {
+            return `<div class="item-card ${item.r} locked">${img}${name}${lvlTag}${statHtml}${elemTag}<div class="item-lock">${item.cls.join('/')} Only</div></div>`;
+        }
+        if (item.buyable === false) {
+            return `<div class="item-card ${item.r} locked">${img}${name}${lvlTag}${statHtml}${elemTag}<div class="item-lock">Loot / Quest Only</div></div>`;
+        }
+        return `<div class="item-card ${item.r}">${img}${name}${lvlTag}${statHtml}${elemTag}<button class="item-price" onclick="${buyExpr}">${item.c}G</button></div>`;
+    }
+
+    // Selling only happens here at the Market — the backpack (character sheet)
+    // is view + equip only.
+    function renderSellSection() {
+        let h = `<div class="shop-cat" style="color:#ff9478;">Sell Your Gear</div><div class="shop-grid">`;
+        const hasGear = hero.inventory.length > 0;
+        const matNames = Object.keys(hero.materials || {});
+        if (!hasGear && !matNames.length) {
+            h += `<i style="opacity:.6; font-size:12px;">Nothing to sell.</i>`;
+        } else {
+            hero.inventory.forEach(entry => {
+                const price = Math.floor(entry.item.c * 0.4);
+                h += `<div class="item-card ${entry.item.r}"><img src="${entry.item.img}" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-${entry.item.r}">${entry.item.n}</div><div class="item-stat def">${itemStatLine(entry.item)}</div><button class="item-price" onclick="sellItem(${entry.uid})">Sell ${price}G</button></div>`;
+            });
+            matNames.forEach(name => {
+                h += `<div class="item-card common"><img src="${phImg()}"><div class="item-name rtxt-common">${name} x${hero.materials[name]}</div><button class="item-price" onclick="sellMaterial('${name}')">Sell 1 (${MATERIAL_SELL_PRICE[name]||3}G)</button></div>`;
+            });
+        }
+        h += `</div>`;
+        return h;
+    }
+
+    function renderShop() {
+        let h = renderSellSection();
+        h += `<div class="shop-cat">Consumables</div><div class="shop-grid">
+            <div class="item-card common"><img src="items/potions/small health potion.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Small Health Pot</div><div class="item-stat def">+20 HP</div><button class="item-price" onclick="buyPotion('hp','s',15)">15G</button></div>
+            <div class="item-card common"><img src="items/potions/medium health potion.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Medium Health Pot</div><div class="item-stat def">+50 HP</div><button class="item-price" onclick="buyPotion('hp','m',35)">35G</button></div>
+            <div class="item-card common"><img src="items/potions/large health potion.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Large Health Pot</div><div class="item-stat def">+100 HP</div><button class="item-price" onclick="buyPotion('hp','l',70)">70G</button></div>
+            <div class="item-card common"><img src="items/potions/small mana potion.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Small Mana Pot</div><div class="item-stat atk">+15 MP</div><button class="item-price" onclick="buyPotion('mp','s',10)">10G</button></div>
+            <div class="item-card common"><img src="items/potions/medium mana potion.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Medium Mana Pot</div><div class="item-stat atk">+35 MP</div><button class="item-price" onclick="buyPotion('mp','m',25)">25G</button></div>
+            <div class="item-card common"><img src="items/potions/large mana potion.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Large Mana Pot</div><div class="item-stat atk">+70 MP</div><button class="item-price" onclick="buyPotion('mp','l',50)">50G</button></div>
+            <div class="item-card common"><img src="items/potions/camping bag.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Camping Kit</div><div class="item-stat def">Full Rest</div><button class="item-price" onclick="buy('camp',60)">60G</button></div>
+            <div class="item-card common"><img src="items/potions/scroll.png" onerror="this.onerror=null;this.src=phImg();"><div class="item-name rtxt-common">Return Scroll</div><div class="item-stat def">To Ashmere</div><button class="item-price" onclick="buy('scroll',40)">40G</button></div></div>`;
+
+        // ---- Weapons (organized by weapon type) ----
+        h += `<div class="shop-cat">1-Hand Swords</div><div class="shop-grid">`;
+        s1h.forEach((w,i) => h += itemCard(w, `<div class="item-stat atk">+${w.p} ATK</div>`, `buyWpn(s1h[${i}])`));
+        h += `</div>`;
+
+        h += `<div class="shop-cat">2-Handed Swords</div><div class="shop-grid">`;
+        s2h.forEach((w,i) => h += itemCard(w, `<div class="item-stat atk">+${w.p} ATK</div>`, `buyWpn(s2h[${i}])`));
+        h += `</div>`;
+
+        h += `<div class="shop-cat">Bows</div><div class="shop-grid">`;
+        bows.forEach((w,i) => h += itemCard(w, `<div class="item-stat atk">+${w.p} ATK</div>`, `buyWpn(bows[${i}])`));
+        h += `</div>`;
+
+        h += `<div class="shop-cat">Crossbows</div><div class="shop-grid">`;
+        crossbows.forEach((w,i) => h += itemCard(w, `<div class="item-stat atk">+${w.p} ATK</div>`, `buyWpn(crossbows[${i}])`));
+        h += `</div>`;
+
+        h += `<div class="shop-cat">Staves</div><div class="shop-grid">`;
+        staves.forEach((w,i) => h += itemCard(w, `<div class="item-stat atk">+${w.p} MAG</div>`, `buyWpn(staves[${i}])`));
+        h += `</div>`;
+
+        // ---- Shields ----
+        h += `<div class="shop-cat">Shields</div><div class="shop-grid">`;
+        shields.forEach((s,i) => h += itemCard(s, `<div class="item-stat def">+${s.d} DEF</div>`, `buyShield(shields[${i}])`));
+        h += `</div>`;
+
+        // ---- Head (every headwear line, merged by slot) ----
+        h += `<div class="shop-cat">Head</div><div class="shop-grid">`;
+        helms.forEach((hm,i) => h += itemCard(hm, `<div class="item-stat def">+${hm.d} DEF</div>`, `buyHelm(helms[${i}])`));
+        hoods.forEach((hd,i) => h += itemCard(hd, `<div class="item-stat def">+${hd.d} DEF</div>`, `buyHelm(hoods[${i}])`));
+        hats.forEach((hd,i) => h += itemCard(hd, `<div class="item-stat def">+${hd.d} DEF</div>`, `buyHelm(hats[${i}])`));
+        h += itemCard(deepmineHoods[0], `<div class="item-stat def">+${deepmineHoods[0].d} DEF</div>`, `buyHelm(deepmineHoods[0])`);
+        h += `</div>`;
+
+        // ---- Body (every body-armor line, merged by slot) ----
+        h += `<div class="shop-cat">Body</div><div class="shop-grid">`;
+        heavyArmor.forEach((a,i) => h += itemCard(a, `<div class="item-stat def">+${a.d} DEF</div>`, `buyArmor(heavyArmor[${i}])`));
+        mArmor.forEach((a,i) => h += itemCard(a, `<div class="item-stat def">+${a.d} DEF</div>`, `buyArmor(mArmor[${i}])`));
+        robes.forEach((a,i) => h += itemCard(a, `<div class="item-stat def">+${a.d} DEF</div>`, `buyArmor(robes[${i}])`));
+        h += itemCard(blightRobes[0], `<div class="item-stat def">+${blightRobes[0].d} DEF</div>`, `buyArmor(blightRobes[0])`);
+        h += `</div>`;
+
+        // ---- Boots (every boots line, merged by slot) ----
+        h += `<div class="shop-cat">Boots</div><div class="shop-grid">`;
+        boots.forEach((b,i) => h += itemCard(b, `<div class="item-stat def">+${b.d} DEF</div>`, `buyBoots(boots[${i}])`));
+        mBoots.forEach((b,i) => h += itemCard(b, `<div class="item-stat def">+${b.d} DEF</div>`, `buyBoots(mBoots[${i}])`));
+        mageBoots.forEach((b,i) => h += itemCard(b, `<div class="item-stat def">+${b.d} DEF</div>`, `buyBoots(mageBoots[${i}])`));
+        h += itemCard(bogBoots[0], `<div class="item-stat def">+${bogBoots[0].d} DEF</div>`, `buyBoots(bogBoots[0])`);
+        h += `</div>`;
+
+        document.getElementById('shop-container').innerHTML = h;
+    }
+
+    // Adds a purchased item to the backpack as a new inventory entry (doesn't auto-equip)
+    function addToInventory(slot, item) {
+        hero.nextUid = (hero.nextUid||0) + 1;
+        hero.inventory.push({ uid: hero.nextUid, slot, item });
+    }
+
+    function buyGuard(item) {
+        if (!item.cls.includes(hero.type)) { alert("Your class can't use this item."); return false; }
+        if (item.buyable === false) { alert("This item can't be bought — it's loot or quest reward only."); return false; }
+        if (hero.gold < item.c) { alert("Not enough gold!"); return false; }
+        return true;
+    }
+    function buyWpn(item) {
+        if (!buyGuard(item)) return;
+        hero.gold-=item.c; addToInventory('wpn', item);
+        save(); updateUI();
+        if (document.getElementById('char-menu').style.display === 'block') renderProfile();
+        alert("Added to backpack!");
+    }
+
+    function buyShield(item) {
+        if (!buyGuard(item)) return;
+        hero.gold-=item.c; addToInventory('shd', item);
+        save(); updateUI();
+        if (document.getElementById('char-menu').style.display === 'block') renderProfile();
+        alert("Added to backpack!");
+    }
+
+    function buyArmor(item) {
+        if (!buyGuard(item)) return;
+        hero.gold-=item.c; addToInventory('body', item);
+        save(); updateUI();
+        if (document.getElementById('char-menu').style.display === 'block') renderProfile();
+        alert("Added to backpack!");
+    }
+
+    function buyHelm(item) {
+        if (!buyGuard(item)) return;
+        hero.gold-=item.c; addToInventory('head', item);
+        save(); updateUI();
+        if (document.getElementById('char-menu').style.display === 'block') renderProfile();
+        alert("Added to backpack!");
+    }
+
+    function buyBoots(item) {
+        if (!buyGuard(item)) return;
+        hero.gold-=item.c; addToInventory('boots', item);
+        save(); updateUI();
+        if (document.getElementById('char-menu').style.display === 'block') renderProfile();
+        alert("Added to backpack!");
+    }
+
+    // Moves an item from the backpack into its equip slot. Whatever was equipped
+    // there before goes back into the backpack instead of being destroyed.
+    // Handles the 2H-weapon/shield conflict the same way a direct purchase used to.
+    function equipItem(uid) {
+        const idx = hero.inventory.findIndex(e => e.uid === uid);
+        if (idx < 0) return;
+        const entry = hero.inventory[idx];
+        const slot = entry.slot;
+
+        if (entry.item.minLvl && hero.lvl < entry.item.minLvl) {
+            alert(`You need to be level ${entry.item.minLvl} to equip ${entry.item.n}.`);
+            return;
+        }
+
+        if (slot === 'wpn' && entry.item.hands === 2 && hero.eq.shd) {
+            addToInventory('shd', hero.eq.shd); hero.eq.shd = null;
+        }
+        if (slot === 'shd' && hero.eq.wpn && hero.eq.wpn.hands === 2) {
+            addToInventory('wpn', hero.eq.wpn); hero.eq.wpn = null;
+        }
+        if (hero.eq[slot]) { addToInventory(slot, hero.eq[slot]); }
+
+        hero.eq[slot] = entry.item;
+        hero.inventory.splice(idx, 1);
+        save(); updateUI(); renderProfile();
+    }
+
+    function sellItem(uid) {
+        const idx = hero.inventory.findIndex(e => e.uid === uid);
+        if (idx < 0) return;
+        const entry = hero.inventory[idx];
+        const price = Math.floor(entry.item.c * 0.4);
+        hero.gold += price;
+        hero.inventory.splice(idx, 1);
+        save(); updateUI(); renderProfile();
+        if (document.getElementById('market-screen').style.display === 'block') renderShop();
+    }
+
+    function sellMaterial(name) {
+        if ((hero.materials[name]||0) > 0) {
+            hero.materials[name]--;
+            hero.gold += MATERIAL_SELL_PRICE[name] || 3;
+            if (hero.materials[name] <= 0) delete hero.materials[name];
+            save(); updateUI(); renderProfile();
+            if (document.getElementById('market-screen').style.display === 'block') renderShop();
+        }
+    }
+
+    function buy(t,c) { if(hero.gold>=c){ hero.gold-=c; if(t==='camp') hero.campKits=(hero.campKits||0)+1; if(t==='scroll') hero.returnScrolls=(hero.returnScrolls||0)+1; save(); updateUI(); } else alert("Not enough gold!"); }
+    function buyPotion(kind,tier,c) { if(hero.gold>=c){ hero.gold-=c; const key='pots_'+kind+'_'+tier; hero[key]=(hero[key]||0)+1; save(); updateUI(); } else alert("Not enough gold!"); }
+    // ============ COMBAT / EXPLORATION LOG ============
+    function logMsg(msg) {
+        const log = document.getElementById('combat-log');
+        log.innerHTML += `<div>${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+    function clearLog() { document.getElementById('combat-log').innerHTML = ''; }
+    function forestLog(msg) {
+        const log = document.getElementById('forest-log');
+        log.innerHTML += `<div>${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // XP needed to go from a given level to the next — grows each level so
+    // leveling up gets progressively harder.
+    function xpForLevel(lvl) { return Math.floor(100 * Math.pow(1.25, lvl - 1)); }
+
+    // ============ MAP ============
+    // Fixed points of interest, placed at coordinates that line up with the
+    // existing monster distance bands (dist = (|x|+|y|)*50m):
+    // Wolf territory starts at 0m, Goblin territory at 200m (|x|+|y|>=4),
+    // Skeleton territory at 500m (|x|+|y|>=10).
+    const MAP_BOUNDS = { minX:-4, maxX:28, minY:-4, maxY:20 };
+    const MAP_SCALE = 40;
+    const POIS = [
+        { name:"Ashmere", x:0, y:0, icon:"town" },
+        { name:"Wolf's Run", x:2, y:0, icon:"wolf" },
+        { name:"Hollow's Edge", x:4, y:2, icon:"goblin" },
+        { name:"The Ridge", x:7, y:5, icon:"ridge" },
+        { name:"The Sunken Bog", x:12, y:4, icon:"bog" },
+        { name:"The Old Mine", x:16, y:8, icon:"mine" },
+        { name:"The Blightwood", x:20, y:14, icon:"blight" },
+        { name:"The Cinder Rift", x:26, y:18, icon:"cinder" }
+    ];
+    // Fixed (not random-each-time) tree scatter so the map looks the same on every visit.
+    const MAP_TREES = [
+        {x:-2,y:3},{x:1,y:5},{x:3,y:-2},{x:5,y:6},{x:6,y:1},{x:8,y:3},{x:-3,y:-1},
+        {x:0,y:7},{x:2,y:8},{x:9,y:7},{x:-1,y:-3},{x:4,y:-3},{x:1,y:1},{x:-3,y:5},{x:9,y:-1},
+        {x:11,y:1},{x:13,y:7},{x:15,y:3},{x:14,y:11},{x:17,y:5},{x:18,y:12},{x:19,y:9},
+        {x:22,y:11},{x:21,y:17},{x:24,y:15},{x:23,y:9},{x:25,y:13},{x:12,y:9},{x:10,y:11}
+    ];
+    function mapPx(x) { return (x - MAP_BOUNDS.minX) * MAP_SCALE; }
+    function mapPy(y) { return (MAP_BOUNDS.maxY - y) * MAP_SCALE; }
+
+    function drawTreeIcon(x, y) {
+        return `<polygon points="${x},${y-8} ${x-6},${y+4} ${x+6},${y+4}" fill="#1e5f3a" opacity="0.55"/><rect x="${x-1.5}" y="${y+4}" width="3" height="4" fill="#4a3320" opacity="0.55"/>`;
+    }
+    function drawHillIcon(x, y, scale) {
+        scale = scale || 1;
+        return `<polygon points="${x},${y-18*scale} ${x-16*scale},${y+8*scale} ${x+16*scale},${y+8*scale}" fill="#3a4250" opacity="0.5"/>`;
+    }
+    function drawPoiIcon(type, x, y) {
+        if (type === 'town') {
+            return `<rect x="${x-13}" y="${y-6}" width="26" height="19" fill="#8a5a2b" stroke="#f2c94c" stroke-width="1.5"/>` +
+                   `<polygon points="${x-16},${y-6} ${x},${y-22} ${x+16},${y-6}" fill="#5a3a1a" stroke="#f2c94c" stroke-width="1.5"/>`;
+        }
+        if (type === 'wolf') {
+            return `<circle cx="${x}" cy="${y}" r="13" fill="#3a4a5a" stroke="#b9c6d4" stroke-width="1.5"/>` +
+                   `<polygon points="${x-10},${y-8} ${x-3},${y-21} ${x-2},${y-6}" fill="#3a4a5a" stroke="#b9c6d4" stroke-width="1.5"/>` +
+                   `<polygon points="${x+10},${y-8} ${x+3},${y-21} ${x+2},${y-6}" fill="#3a4a5a" stroke="#b9c6d4" stroke-width="1.5"/>`;
+        }
+        if (type === 'goblin') {
+            return `<polygon points="${x},${y-22} ${x-16},${y+10} ${x+16},${y+10}" fill="#2a5a3a" stroke="#6de3b0" stroke-width="1.5"/>`;
+        }
+        if (type === 'ridge') {
+            return `<circle cx="${x}" cy="${y-5}" r="10" fill="#e8e0d0" stroke="#8b2f3a" stroke-width="1.5"/>` +
+                   `<circle cx="${x-3}" cy="${y-6}" r="2" fill="#8b2f3a"/><circle cx="${x+3}" cy="${y-6}" r="2" fill="#8b2f3a"/>` +
+                   `<line x1="${x-13}" y1="${y+13}" x2="${x+13}" y2="${y-13}" stroke="#e8e0d0" stroke-width="3"/>` +
+                   `<line x1="${x-13}" y1="${y-13}" x2="${x+13}" y2="${y+13}" stroke="#e8e0d0" stroke-width="3"/>`;
+        }
+        if (type === 'bog') {
+            return `<ellipse cx="${x}" cy="${y+6}" rx="22" ry="11" fill="#2a4a3a" stroke="#6de3b0" stroke-width="1.5" opacity="0.75"/>` +
+                   `<ellipse cx="${x-6}" cy="${y}" rx="5" ry="8" fill="#3a5a4a" stroke="#6de3b0" stroke-width="1.2"/>` +
+                   `<ellipse cx="${x+8}" cy="${y-3}" rx="4" ry="6" fill="#3a5a4a" stroke="#6de3b0" stroke-width="1.2"/>`;
+        }
+        if (type === 'mine') {
+            return `<polygon points="${x-16},${y+10} ${x-10},${y-13} ${x+10},${y-13} ${x+16},${y+10}" fill="#1c1c22" stroke="#b9c6d4" stroke-width="1.5"/>` +
+                   `<ellipse cx="${x}" cy="${y+6}" rx="8" ry="9" fill="#050403"/>`;
+        }
+        if (type === 'blight') {
+            return `<circle cx="${x}" cy="${y}" r="14" fill="#241a30" stroke="#9b59b6" stroke-width="1.5" opacity="0.85"/>` +
+                   `<path d="M${x} ${y-14} Q${x+14} ${y} ${x} ${y+14} Q${x-14} ${y} ${x} ${y-14} Z" fill="none" stroke="#9b59b6" stroke-width="1.5"/>` +
+                   `<circle cx="${x}" cy="${y}" r="3" fill="#9b59b6"/>`;
+        }
+        if (type === 'cinder') {
+            return `<circle cx="${x}" cy="${y}" r="16" fill="none" stroke="#e2572a" stroke-width="1.8"/>` +
+                   `<path d="M${x} ${y+14} C${x-13} ${y-3} ${x-5} ${y-10} ${x} ${y-18} C${x+5} ${y-10} ${x+13} ${y-3} ${x} ${y+14} Z" fill="#f7a84e" stroke="#e2572a" stroke-width="1.5"/>`;
+        }
+        return '';
+    }
+
+    function renderMap() {
+        const w = (MAP_BOUNDS.maxX - MAP_BOUNDS.minX) * MAP_SCALE;
+        const h = (MAP_BOUNDS.maxY - MAP_BOUNDS.minY) * MAP_SCALE;
+        let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:900px; max-height:80vh; background:#0c1420; border-radius:8px; border:1px solid var(--accent);">`;
+
+        for (let gx = MAP_BOUNDS.minX; gx <= MAP_BOUNDS.maxX; gx++) svg += `<line x1="${mapPx(gx)}" y1="0" x2="${mapPx(gx)}" y2="${h}" stroke="#16202f" stroke-width="1"/>`;
+        for (let gy = MAP_BOUNDS.minY; gy <= MAP_BOUNDS.maxY; gy++) svg += `<line x1="0" y1="${mapPy(gy)}" x2="${w}" y2="${mapPy(gy)}" stroke="#16202f" stroke-width="1"/>`;
+
+        // Hills behind The Ridge, then trees scattered across the forest
+        svg += drawHillIcon(mapPx(8), mapPy(4), 1.3) + drawHillIcon(mapPx(6), mapPy(6), 1);
+        MAP_TREES.forEach(t => svg += drawTreeIcon(mapPx(t.x), mapPy(t.y)));
+
+        // Points of interest + labels (clickable — travel there instantly)
+        POIS.forEach(p => {
+            const px = mapPx(p.x), py = mapPy(p.y);
+            svg += `<g onclick="travelToPOI('${p.name}')" style="cursor:pointer;">`;
+            svg += `<circle cx="${px}" cy="${py}" r="26" fill="rgba(79,227,201,.06)" stroke="rgba(79,227,201,.25)" stroke-width="1"/>`;
+            svg += drawPoiIcon(p.icon, px, py);
+            svg += `<text x="${px}" y="${py+38}" font-size="16" font-weight="bold" fill="#e8e1d3" text-anchor="middle" font-family="Georgia, serif">${p.name}</text>`;
+            svg += `</g>`;
+        });
+
+        // Hero marker (clamped to the visible bounds so it never draws off-canvas)
+        const hxRaw = Math.max(MAP_BOUNDS.minX, Math.min(MAP_BOUNDS.maxX, hero.x));
+        const hyRaw = Math.max(MAP_BOUNDS.minY, Math.min(MAP_BOUNDS.maxY, hero.y));
+        const hx = mapPx(hxRaw), hy = mapPy(hyRaw);
+        svg += `<circle cx="${hx}" cy="${hy}" r="11" fill="var(--accent)" stroke="#fff" stroke-width="2"/>`;
+        svg += `<text x="${hx}" y="${hy-18}" font-size="15" fill="var(--accent)" text-anchor="middle" font-weight="bold" font-family="Georgia, serif">${hero.name}</text>`;
+
+        svg += `</svg>`;
+        document.getElementById('map-container').innerHTML = svg;
+    }
+
+    function travelToPOI(name) {
+        const poi = POIS.find(p => p.name === name);
+        if (!poi) return;
+        if (poi.x === hero.x && poi.y === hero.y) { alert(`You're already at ${poi.name}.`); return; }
+        if (!confirm(`Travel to ${poi.name}?`)) return;
+        hero.x = poi.x; hero.y = poi.y;
+        const d = Math.abs(hero.x) + Math.abs(hero.y);
+        document.getElementById('coord-text').innerText = `Location: ${hero.x},${hero.y} (${d*50}m)`;
+        forestLog(`You make your way to <b>${poi.name}</b>.`);
+        save(); updateUI();
+        showScreen('forest-screen');
+    }
+
+    // ============ NEW ZONE EQUIPMENT LINES ============
+    // Each new zone has its own 4-tier gear line, themed to one class. Only the
+    // common piece is shop-buyable (see 'buyable:false' below) — rare/unique drop
+    // from that zone's regular creature, legendary drops only from that zone's boss.
+    const bogBoots = [
+        { n:"Bogtreader Waders", c:55, d:3, r:"common", slot:"boots", cls:["Fighter"], minLvl:1, buyable:true, img:"items/h.boots/bogtreader-waders.png" },
+        { n:"Silted Greaves", c:220, d:9, r:"rare", slot:"boots", cls:["Fighter"], minLvl:5, buyable:false, img:"items/h.boots/silted-greaves.png" },
+        { n:"Marshwalker's Stride", c:650, d:18, r:"unique", slot:"boots", cls:["Fighter"], minLvl:10, buyable:false, img:"items/h.boots/marshwalkers-stride.png" },
+        { n:"Drowned King's Warboots", c:2600, d:38, r:"legendary", slot:"boots", cls:["Fighter"], minLvl:15, buyable:false, img:"items/h.boots/drowned-kings-warboots.png" }
+    ];
+    const deepmineHoods = [
+        { n:"Miner's Lamp-Hood", c:55, d:3, r:"common", slot:"head", cls:["Archer"], minLvl:1, buyable:true, img:"items/hood/miners-lamp-hood.png" },
+        { n:"Crawler-Hide Cap", c:220, d:9, r:"rare", slot:"head", cls:["Archer"], minLvl:5, buyable:false, img:"items/hood/crawler-hide-cap.png" },
+        { n:"Deepmine Warden's Cowl", c:650, d:18, r:"unique", slot:"head", cls:["Archer"], minLvl:10, buyable:false, img:"items/hood/deepmine-wardens-cowl.png" },
+        { n:"Crown of the Unlit Depths", c:2600, d:38, r:"legendary", slot:"head", cls:["Archer"], minLvl:15, buyable:false, img:"items/hood/crown-of-the-unlit-depths.png" }
+    ];
+    const blightRobes = [
+        { n:"Blightwood Traveler's Wrap", c:55, d:3, r:"common", slot:"body", cls:["Mage"], minLvl:1, buyable:true, img:"items/robe/blightwood-travelers-wrap.png" },
+        { n:"Thornwoven Vestment", c:220, d:9, r:"rare", slot:"body", cls:["Mage"], minLvl:5, buyable:false, img:"items/robe/thornwoven-vestment.png" },
+        { n:"Corrupted Bloomrobe", c:650, d:18, r:"unique", slot:"body", cls:["Mage"], minLvl:10, buyable:false, img:"items/robe/corrupted-bloomrobe.png" },
+        { n:"Heartrot Vestment of the Blight", c:2600, d:38, r:"legendary", slot:"body", cls:["Mage"], minLvl:15, buyable:false, img:"items/robe/heartrot-vestment.png" }
+    ];
+    // Ember Wisp's signature trophy — a one-off, not part of a 4-tier line, usable
+    // by any class, never for sale at any tier.
+    const wispBoots = { n:"Wisp-Ember Striders", c:800, d:12, r:"rare", slot:"boots", cls:["Fighter","Archer","Mage"], minLvl:6, buyable:false, img:"items/h.boots/wisp-ember-striders.png" };
+    // Cinderkin's exclusive drop — a standalone legendary staff, the best in the game.
+    const cinderkinsBrand = { n:"Cinderkin's Brand", c:4200, p:180, r:"legendary", slot:"wpn", hands:2, wt:"staff", cls:["Mage"], minLvl:18, buyable:false, img:"items/stuff/cinderkins-brand.png" };
+
+    // Single loot-only rare items spread across EVERY existing equipment category —
+    // one new trophy per slot, each dropped by a specific new creature below.
+    const reedSerpentsFang   = { n:"Reed Serpent's Fang", c:280, p:14, r:"rare", slot:"wpn", hands:1, wt:"sword", cls:["Fighter"], minLvl:5, buyable:false, img:"items/1-hand sword/reed-serpents-fang.png" };
+    const bogtideCleaver     = { n:"Bogtide Cleaver", c:480, p:38, r:"rare", slot:"wpn", hands:2, wt:"sword", cls:["Fighter"], minLvl:5, buyable:false, img:"items/great sword/bogtide-cleaver.png" };
+    const bogtideBulwark     = { n:"Bogtide Bulwark", c:200, d:9, r:"rare", slot:"shd", cls:["Fighter"], minLvl:5, buyable:false, img:"items/shild/bogtide-bulwark.jpg" };
+    const reedScaledCuirass  = { n:"Reed-Scaled Cuirass", c:340, d:11, r:"rare", slot:"body", cls:["Fighter"], minLvl:5, buyable:false, img:"items/h.armor/reed-scaled-cuirass.png" };
+    const waterloggedGreathelm = { n:"Waterlogged Greathelm", c:240, d:8, r:"rare", slot:"head", cls:["Fighter"], minLvl:5, buyable:false, img:"items/helm/waterlogged-greathelm.jpg" };
+
+    const deepmineRepeater   = { n:"Deepmine Repeater", c:250, p:16, r:"rare", slot:"wpn", hands:1, wt:"crossbow", cls:["Archer"], minLvl:8, buyable:false, img:"items/C.bow/deepmine-repeater.jpg" };
+    const crawlerSilkRecurve = { n:"Crawler-Silk Recurve", c:400, p:34, r:"rare", slot:"wpn", hands:2, wt:"bow", cls:["Archer"], minLvl:8, buyable:false, img:"items/L.bow/crawler-silk-recurve.jpg" };
+    const broodsilkWrap      = { n:"Broodsilk Wrap", c:320, d:9, r:"rare", slot:"body", cls:["Archer"], minLvl:8, buyable:false, img:"items/M.armor/broodsilk-wrap.png" };
+    const broodlingTreads    = { n:"Broodling Treads", c:210, d:7, r:"rare", slot:"boots", cls:["Archer"], minLvl:8, buyable:false, img:"items/m.boots/broodling-treads.png" };
+
+    const rotrootWandstaff   = { n:"Rotroot Wandstaff", c:420, p:34, r:"rare", slot:"wpn", hands:2, wt:"staff", cls:["Mage"], minLvl:11, buyable:false, img:"items/stuff/rotroot-wandstaff.jpg" };
+    const rotrootCap         = { n:"Rotroot Cap", c:210, d:7, r:"rare", slot:"head", cls:["Mage"], minLvl:11, buyable:false, img:"items/hat/rotroot-cap.png" };
+    const blightstepSlippers = { n:"Blightstep Slippers", c:210, d:7, r:"rare", slot:"boots", cls:["Mage"], minLvl:11, buyable:false, img:"items/shoes/blightstep-slippers.jpg" };
+
+    const MONSTERS = [
+        { n:"Wolf", hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
+          loot:[{name:"Wolf Hide", chance:70, min:1, max:3}] },
+        { n:"Goblin", hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
+          loot:[{name:"Broken Goblin Dagger", chance:70, min:1, max:1}] },
+        { n:"Skeleton", hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
+          loot:[{name:"Goblin Bones", chance:70, min:1, max:5}] },
+        // Undead theme (The Ridge, deepening past the Skeleton band)
+        { n:"Wraith", hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/wraith.png", l:600,
+          loot:[
+            {name:"Wraith Essence", chance:65, min:1, max:2},
+            {name:"Ember Shard", chance:10, min:1, max:1}
+          ] },
+        { n:"Ghoul", hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
+          loot:[{name:"Ghoul Claw", chance:65, min:1, max:3}] },
+        // Water-loving theme (The Sunken Bog)
+        { n:"Bog Wretch", hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/bog wretch.jpg", l:800,
+          loot:[
+            {name:"Slick Bog Scale", chance:65, min:1, max:3},
+            {type:"equip", item: bogBoots[1], chance:8},
+            {type:"equip", item: bogBoots[2], chance:2},
+            {type:"equip", item: bogtideCleaver, chance:5},
+            {type:"equip", item: bogtideBulwark, chance:5},
+            {type:"equip", item: waterloggedGreathelm, chance:5}
+          ] },
+        { n:"Reed Serpent", hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/reed serpent.jpg", l:950,
+          loot:[
+            {name:"Serpent Scale", chance:65, min:1, max:3},
+            {type:"equip", item: reedSerpentsFang, chance:6},
+            {type:"equip", item: reedScaledCuirass, chance:5}
+          ] },
+        // Subterranean/insectoid theme (The Old Mine)
+        { n:"Deepmine Crawler", hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/deepmine crawler.jpg", l:1200,
+          loot:[
+            {name:"Chitin Shard", chance:65, min:1, max:3},
+            {type:"equip", item: deepmineHoods[1], chance:8},
+            {type:"equip", item: deepmineHoods[2], chance:2},
+            {type:"equip", item: deepmineRepeater, chance:6}
+          ] },
+        { n:"Tunnel Broodling", hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/tunnel broodling.jpg", l:1400,
+          loot:[
+            {name:"Brood Silk", chance:65, min:1, max:3},
+            {type:"equip", item: crawlerSilkRecurve, chance:6},
+            {type:"equip", item: broodsilkWrap, chance:5},
+            {type:"equip", item: broodlingTreads, chance:5}
+          ] },
+        // Corrupted nature theme (The Blightwood)
+        { n:"Blightwood Stalker", hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/blightwood-stalker.jpg", l:1700,
+          loot:[
+            {name:"Blighted Bark", chance:65, min:1, max:3},
+            {type:"equip", item: blightRobes[1], chance:8},
+            {type:"equip", item: blightRobes[2], chance:2},
+            {type:"equip", item: blightstepSlippers, chance:5}
+          ] },
+        { n:"Rotroot Horror", hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/rotroot horror.jpg", l:1950,
+          loot:[
+            {name:"Rotroot Sap", chance:65, min:1, max:3},
+            {type:"equip", item: rotrootWandstaff, chance:6},
+            {type:"equip", item: rotrootCap, chance:5}
+          ] }
+    ];
+
+    // Ember Wisp — rare special encounter (not a normal tier monster), can appear
+    // instead of a Skeleton once you're deep enough in.
+    const EMBER_WISP = {
+        n:"Ember Wisp", hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/ember wisp.jpg",
+        zoneMin:500, zoneMax:799, encounterChance:8,
+        loot:[
+            {name:"Ember Shard", chance:100, min:1, max:2},
+            {type:"equip", item: wispBoots, chance:35}
+        ]
+    };
+
+    // Zone bosses — rare encounters gated to their zone's distance band. Each
+    // guards the legendary tier of that zone's gear line; Cinderkin guards its
+    // own exclusive weapon instead of a shared set.
+    const BOSSES = [
+        { n:"The Drowned King", hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/the drowned king.jpg",
+          zoneMin:800, zoneMax:1199, encounterChance:8,
+          loot:[
+            {name:"Slick Bog Scale", chance:100, min:2, max:4},
+            {type:"equip", item: bogBoots[3], chance:25}
+          ] },
+        { n:"The Unlit Warden", hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/the unlit warden.jpg",
+          zoneMin:1200, zoneMax:1699, encounterChance:8,
+          loot:[
+            {name:"Chitin Shard", chance:100, min:2, max:4},
+            {type:"equip", item: deepmineHoods[3], chance:25}
+          ] },
+        { n:"The Blight Heart", hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/the blight heart.jpg",
+          zoneMin:1700, zoneMax:2199, encounterChance:8,
+          loot:[
+            {name:"Blighted Bark", chance:100, min:2, max:4},
+            {type:"equip", item: blightRobes[3], chance:25}
+          ] },
+        { n:"Cinderkin, the Ember's Herald", hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
+          zoneMin:2200, zoneMax:999999, encounterChance:6,
+          loot:[
+            {type:"equip", item: cinderkinsBrand, chance:20}
+          ] }
+    ];
+
+    // Rolls the encounter for the given distance: bosses and the Ember Wisp get
+    // first crack (zone-gated, low chance), otherwise falls back to the normal
+    // tiered monster for that distance — same as before these were added.
+    function pickEncounter(dist) {
+        for (const boss of BOSSES) {
+            if (dist >= boss.zoneMin && dist <= boss.zoneMax && Math.random()*100 < boss.encounterChance) return boss;
+        }
+        if (dist >= EMBER_WISP.zoneMin && dist <= EMBER_WISP.zoneMax && Math.random()*100 < EMBER_WISP.encounterChance) return EMBER_WISP;
+        let p = MONSTERS.filter(m => m.l <= dist);
+        return p[p.length-1];
+    }
+
+    // ============ DIALOGUE ENGINE ============
+    // Drives the generic dialogue modal: a speaker name, a sequence of lines
+    // shown one at a time via NEXT, then either branching choices or a single
+    // CONTINUE that closes the box and reports back what was picked (if anything).
+    let dialogueState = null;
+    function showDialogue(speaker, lines, choices, onComplete) {
+        dialogueState = { speaker, lines, idx: 0, choices, onComplete };
+        document.getElementById('dialogue-modal').style.display = 'block';
+        renderDialogue();
+    }
+    function renderDialogue() {
+        document.getElementById('dlg-speaker').innerText = dialogueState.speaker;
+        document.getElementById('dlg-text').innerHTML = dialogueState.lines[dialogueState.idx];
+        const actions = document.getElementById('dlg-actions');
+        if (dialogueState.idx < dialogueState.lines.length - 1) {
+            actions.innerHTML = `<button onclick="dialogueNext()">NEXT</button>`;
+        } else if (dialogueState.choices && dialogueState.choices.length) {
+            actions.innerHTML = dialogueState.choices.map((c,i) => `<button onclick="dialogueChoose(${i})">${c.text}</button>`).join('');
+        } else {
+            actions.innerHTML = `<button onclick="dialogueClose()">CONTINUE</button>`;
+        }
+    }
+    function dialogueNext() { dialogueState.idx++; renderDialogue(); }
+    function dialogueChoose(i) {
+        const choice = dialogueState.choices[i];
+        const onComplete = dialogueState.onComplete;
+        document.getElementById('dialogue-modal').style.display = 'none';
+        if (onComplete) onComplete(choice);
+    }
+    function dialogueClose() {
+        const onComplete = dialogueState.onComplete;
+        document.getElementById('dialogue-modal').style.display = 'none';
+        if (onComplete) onComplete(null);
+    }
+
+    // ============ QUESTS (Ashmere Notice Board) ============
+    // hero.quests[id] = { progress, status: 'active'|'completed', choice }. Anything not
+    // in that map yet is shown as "available" once its prerequisite (requires) is done.
+    // hero.storyFlags[flag] = true records which dialogue choices the player made —
+    // nothing branches on them yet, but they're there for future quests to read.
+    const QUEST_DEFS = [
+        { id:"q_wolves", name:"Culling the Pack", type:"kill", target:"Wolf", need:3, rewardGold:50, rewardXp:40,
+          giver:"Captain Rowan", requires:null,
+          desc:"The wolves on the north road have gone strange, snapping at shadows that aren't there. Thin their numbers before someone gets hurt.",
+          intro:[
+            "Captain Rowan taps a finger on the map spread across the table. \"Wolves on the north road. Normally that's nothing — but these ones aren't acting right. Attacking in daylight, ignoring fire. I need eyes on it, and a few less wolves.\"",
+            "\"Can you handle it, or is that above your pay grade?\""
+          ],
+          choices:[
+            {text:"\"Consider it done.\"", flag:"q_wolves_confident"},
+            {text:"\"I'll do what I can.\"", flag:"q_wolves_humble"}
+          ],
+          turnIn:[
+            "You describe what you found — wolves snapping at shadows, foam at the mouth, eyes wrong. Rowan's face darkens.",
+            "\"That's not sickness. That's something calling them.\" He pays you without haggling."
+          ] },
+        { id:"q_hides", name:"Proof of the Hunt", type:"collect", target:"Wolf Hide", need:5, rewardGold:60, rewardXp:30,
+          giver:"Tanner Mira", requires:"q_wolves",
+          desc:"The tanner will pay well for wolf hides — but wants proof you're doing the town's work while you're at it.",
+          intro:[
+            "The tanner, Mira, barely looks up from her workbench. \"Heard you're the one thinning the wolves. Bring me hides — good ones, not the shredded kind — and I'll make it worth your trouble.\"",
+            "\"Five should do it. Don't skin them in a hurry, it shows.\""
+          ],
+          choices:[
+            {text:"\"I'll bring you the best of them.\"", flag:"q_hides_careful"},
+            {text:"\"Whatever's fastest.\"", flag:"q_hides_quick"}
+          ],
+          turnIn:[
+            "Mira runs a hand over the hides, nodding slowly. \"Not bad at all.\" She counts out your coin.",
+            "\"Rowan still has you running errands? Watch yourself out there — something's got the animals spooked, and animals are rarely wrong.\""
+          ] },
+        { id:"q_goblins", name:"Raiders at the Hollow", type:"kill", target:"Goblin", need:3, rewardGold:90, rewardXp:70,
+          giver:"Captain Rowan", requires:"q_hides",
+          desc:"Goblin raiders have been spotted pushing toward the tree line. Drive them back before they reach the road.",
+          intro:[
+            "\"Goblins from the hollow are pushing further out than they ever have,\" Rowan says, jaw tight. \"Something's driving them out of their own territory — and I don't like not knowing what.\"",
+            "\"I can send you in loud, or you scout quiet first and see what's actually going on. Your call.\""
+          ],
+          choices:[
+            {text:"Go in loud — hit them before they hit us.", flag:"q_goblins_aggressive"},
+            {text:"Scout first — find out what's driving them.", flag:"q_goblins_cautious"}
+          ],
+          turnIn:[
+            "You lay a broken goblin dagger on the table. Rowan turns it over in his hand.",
+            "\"Goblin-make, but old. This wasn't traded — it was dug up.\" He frowns. \"Dug up from where, I wonder.\""
+          ] },
+        { id:"q_skeletons", name:"What the Ridge Remembers", type:"kill", target:"Skeleton", need:2, rewardGold:140, rewardXp:120,
+          giver:"Captain Rowan", requires:"q_goblins",
+          desc:"Something is waking the old dead past the ridge. Whatever's stirring them, put it — and them — back to rest.",
+          intro:[
+            "Rowan's voice is quieter now. \"Past the ridge, there was a battle a hundred years back. Both sides died there, to the last man. It's been quiet ground since — until now.\"",
+            "\"Skeletons are rising. I won't lie to you, I don't know what's waking them. But I know it's connected to whatever's under the roots.\""
+          ],
+          choices:[
+            {text:"\"I'll put them back down, whatever it takes.\"", flag:"q_skel_resolute"},
+            {text:"\"...and if I find out what's under the roots?\"", flag:"q_skel_curious"}
+          ],
+          turnIn:[
+            "You return from the ridge, and Rowan doesn't need to ask how it went — he can see it on you.",
+            "\"So it's real,\" he says quietly. \"The Ember. Whatever it is, it's not sleeping anymore.\"",
+            "He pays you, and for once doesn't offer another job. \"Rest first. This isn't finished — not by a long way.\""
+          ] },
+        { id:"q_bog", name:"Into the Sunken Bog", type:"kill", target:"Bog Wretch", need:3, rewardGold:100, rewardXp:90, minLvl:5,
+          giver:"Captain Rowan", requires:"q_skeletons",
+          rewardEquipByClass:{ Fighter: bogBoots[1] }, rewardEquipGoldAlt:150,
+          desc:"Something waterlogged and wrong has crawled out of the sunken bog south of the ridge. Thin its numbers before it reaches the road.",
+          intro:[
+            "Rowan unrolls a damp, half-ruined map. \"The bog's always been foul ground, but it kept to itself. Not anymore. Things are coming out of it — wretched, waterlogged things that shouldn't be able to walk.\"",
+            "\"I need someone to go in and cut that number down before they find their way to the road.\""
+          ],
+          choices:[
+            {text:"\"I'll wade in and finish it.\"", flag:"q_bog_direct"},
+            {text:"\"I'd rather understand what I'm dealing with first.\"", flag:"q_bog_careful"}
+          ],
+          turnIn:[
+            "You describe the bog — the wrongness of it, the way the water itself seemed to flinch. Rowan doesn't look surprised, just tired.",
+            "\"Every piece we find points the same direction. Keep pulling that thread.\""
+          ] },
+        { id:"q_mine", name:"Silence in the Old Mine", type:"kill", target:"Deepmine Crawler", need:3, rewardGold:150, rewardXp:130, minLvl:9,
+          giver:"Captain Rowan", requires:"q_bog",
+          rewardEquipByClass:{ Archer: deepmineHoods[1] }, rewardEquipGoldAlt:200,
+          desc:"The old mine east of the bog went quiet decades ago. It isn't quiet anymore. Something's nesting in the dark, and it's not alone.",
+          intro:[
+            "\"The old mine's been dead rock for thirty years,\" Rowan says. \"Now the miners' guild says they're hearing things move down there. Chittering. Digging.\"",
+            "\"I want it cleared before whatever's breeding down there decides the surface looks better.\""
+          ],
+          choices:[
+            {text:"\"I'll clear it out, root and nest.\"", flag:"q_mine_thorough"},
+            {text:"\"I'll deal with what I find — no promises beyond that.\"", flag:"q_mine_pragmatic"}
+          ],
+          turnIn:[
+            "You empty a pouch of broken chitin onto the table. Rowan turns a shard over, frowning at the faint heat still coming off it.",
+            "\"That's not natural cave-crawler shell. That's been near something hot. Near the Ember, maybe.\""
+          ] },
+        { id:"q_blight", name:"The Blightwood Spreads", type:"kill", target:"Blightwood Stalker", need:3, rewardGold:220, rewardXp:190, minLvl:13,
+          giver:"Captain Rowan", requires:"q_mine",
+          rewardEquipByClass:{ Mage: blightRobes[1] }, rewardEquipGoldAlt:280,
+          desc:"Past the mine, the forest itself has turned wrong — corrupted, hostile, and creeping outward. Push it back before it reaches Ashmere's fields.",
+          intro:[
+            "Rowan's expression is grim in a way you haven't seen before. \"Past the mine, the trees themselves have gone bad. Twisted. Hungry, near as we can tell.\"",
+            "\"It's spreading, slowly, toward the fields. I need it stopped, or at least slowed, before it isn't slow anymore.\""
+          ],
+          choices:[
+            {text:"\"I'll burn a path through it if I have to.\"", flag:"q_blight_aggressive"},
+            {text:"\"I want to know what's driving it before I start swinging.\"", flag:"q_blight_curious"}
+          ],
+          turnIn:[
+            "You don't have to say much. The look on your face, and the state of your gear, tells Rowan enough.",
+            "\"Whatever's under those roots,\" he says slowly, \"it's not done waking up. I think you already knew that.\""
+          ] }
+    ];
+
+    function openQuestIntro(id) {
+        const def = QUEST_DEFS.find(d => d.id === id);
+        if (def.minLvl && hero.lvl < def.minLvl) { alert(`You need to be level ${def.minLvl} for this quest.`); return; }
+        showDialogue(def.giver, def.intro, def.choices, (choice) => {
+            hero.quests[id] = { progress: 0, status: 'active', choice: choice ? choice.flag : null };
+            if (choice && choice.flag) hero.storyFlags[choice.flag] = true;
+            save(); renderQuestBoard();
+        });
+    }
+
+    function openQuestTurnIn(id) {
+        const def = QUEST_DEFS.find(d => d.id === id);
+        const q = hero.quests[id];
+        if (!def || !q || q.status !== 'active' || q.progress < def.need) { alert("Objective not complete yet."); return; }
+        showDialogue(def.giver, def.turnIn, null, () => {
+            if (def.type === 'collect') {
+                hero.materials[def.target] = Math.max(0, (hero.materials[def.target]||0) - def.need);
+                if (hero.materials[def.target] <= 0) delete hero.materials[def.target];
+            }
+            hero.gold += def.rewardGold;
+            hero.xp += def.rewardXp;
+            let equipMsg = '';
+            if (def.rewardEquipByClass && def.rewardEquipByClass[hero.type]) {
+                const item = def.rewardEquipByClass[hero.type];
+                addToInventory(item.slot, item);
+                equipMsg = ` You also receive ${item.n}!`;
+            } else if (def.rewardEquipGoldAlt) {
+                hero.gold += def.rewardEquipGoldAlt;
+                equipMsg = ` (+${def.rewardEquipGoldAlt}G bonus — no gear suited to your class from this one.)`;
+            }
+            q.status = 'completed';
+            let leveledUp = false;
+            while (hero.xp >= xpForLevel(hero.lvl)) {
+                hero.xp -= xpForLevel(hero.lvl);
+                hero.lvl++; hero.sp+=3; hero.skp+=1;
+                leveledUp = true;
+            }
+            save(); updateUI(); renderQuestBoard();
+            if (equipMsg) setTimeout(() => alert(equipMsg.trim()), 200);
+            if (leveledUp) setTimeout(() => alert(`LEVEL UP! You are now level ${hero.lvl}.`), leveledUp && equipMsg ? 500 : 300);
+        });
+    }
+
+    // Read-only summary of accepted quests, shown in the character sheet so you
+    // can check progress without walking back to the Notice Board. Turning
+    // quests in still happens there, with the giver, in dialogue.
+    function renderQuestLog() {
+        const box = document.getElementById('m-quest-log');
+        if (!box) return;
+        let h = '';
+        QUEST_DEFS.forEach(def => {
+            const q = hero.quests[def.id];
+            if (!q) return;
+            const goalLabel = def.type === 'kill' ? `Defeat ${def.need}x ${def.target}` : `Collect ${def.need}x ${def.target}`;
+            if (q.status === 'active') {
+                h += `<div class="skill-item"><b>${def.name}</b><br><small>${goalLabel}: ${q.progress}/${def.need}</small></div>`;
+            } else {
+                h += `<div class="skill-item" style="opacity:.6;"><b>${def.name}</b><br><small style="color:#6de3b0;">&#10003; Completed</small></div>`;
+            }
+        });
+        box.innerHTML = h || `<i style="opacity:.6; font-size:12px;">No quests accepted yet — visit the Notice Board in town.</i>`;
+    }
+
+    function renderQuestBoard() {
+        const list = document.getElementById('quest-list');
+        let h = '';
+        QUEST_DEFS.forEach(def => {
+            // Hide quests whose prerequisite isn't finished yet, so the chain unfolds
+            // one link at a time instead of spoiling the whole board up front.
+            if (def.requires && (!hero.quests[def.requires] || hero.quests[def.requires].status !== 'completed')) return;
+            const q = hero.quests[def.id];
+            const status = q ? q.status : 'available';
+            h += `<div class="skill-item">`;
+            h += `<b>${def.name}</b> <small style="opacity:.6;">— ${def.giver}</small><br><small style="opacity:.8;">${def.desc}</small><br>`;
+            const goalLabel = def.type === 'kill' ? `Defeat ${def.need}x ${def.target}` : `Collect ${def.need}x ${def.target}`;
+            if (status === 'available' && def.minLvl && hero.lvl < def.minLvl) {
+                h += `<small style="color:#ff8b93;">Requires level ${def.minLvl} (you are ${hero.lvl})</small>`;
+            } else if (status === 'available') {
+                h += `<small style="opacity:.7;">${goalLabel} — Reward: ${def.rewardGold}G, ${def.rewardXp} XP</small><br>`;
+                h += `<button onclick="openQuestIntro('${def.id}')">Talk to ${def.giver}</button>`;
+            } else if (status === 'active') {
+                h += `<small>${goalLabel}: ${q.progress}/${def.need}</small><br>`;
+                if (q.progress >= def.need) h += `<button onclick="openQuestTurnIn('${def.id}')">Turn In (+${def.rewardGold}G, +${def.rewardXp} XP)</button>`;
+                else h += `<small style="opacity:.6;">In progress...</small>`;
+            } else {
+                h += `<small style="color:#6de3b0;">&#10003; Completed</small>`;
+            }
+            h += `</div>`;
+        });
+        list.innerHTML = h || `<i style="opacity:.6;">No quests posted right now.</i>`;
+    }
+
+    // Central choke points for material/kill gains so quest progress updates
+    // no matter where the gain came from (combat loot, a forest chest, etc).
+    function gainMaterial(name, qty) {
+        hero.materials[name] = (hero.materials[name]||0) + qty;
+        QUEST_DEFS.forEach(def => {
+            if (def.type === 'collect' && def.target === name) {
+                const q = hero.quests[def.id];
+                if (q && q.status === 'active') q.progress = Math.min(def.need, q.progress + qty);
+            }
+        });
+    }
+    function registerKill(name) {
+        QUEST_DEFS.forEach(def => {
+            if (def.type === 'kill' && def.target === name) {
+                const q = hero.quests[def.id];
+                if (q && q.status === 'active') q.progress = Math.min(def.need, q.progress + 1);
+            }
+        });
+    }
+
+    // ============ EXPLORATION ============
+    function move(dx,dy) {
+        hero.x+=dx; hero.y+=dy;
+        let d=Math.abs(hero.x)+Math.abs(hero.y);
+        document.getElementById('coord-text').innerText=`Location: ${hero.x},${hero.y} (${d*50}m)`;
+        const roll = Math.random();
+        if (roll < 0.28) {
+            triggerCombat(d*50);
+        } else if (roll < 0.36) {
+            triggerBoxEvent();
+        } else if (roll < 0.44) {
+            triggerNpcEvent();
+        } else {
+            forestLog("The path is quiet.");
+        }
+        updateUI();
+    }
+
+    function triggerBoxEvent() {
+        const roll = Math.random();
+        if (roll < 0.5) {
+            const g = 5 + Math.floor(Math.random()*20);
+            hero.gold += g;
+            forestLog(`You spot a small chest with <b>${g}G</b> inside.`);
+        } else if (roll < 0.85) {
+            const mats = ["Wolf Hide","Broken Goblin Dagger","Goblin Bones"];
+            const name = mats[Math.floor(Math.random()*mats.length)];
+            gainMaterial(name, 1);
+            forestLog(`You find a chest containing <b>1x ${name}</b>.`);
+        } else {
+            forestLog("You find a chest, but it's already empty.");
+        }
+        save();
+    }
+
+    function triggerNpcEvent() {
+        const roll = Math.random();
+        if (roll < 0.5) {
+            const g = 10 + Math.floor(Math.random()*15);
+            hero.gold += g;
+            forestLog(`A traveler thanks you for the directions and gives you <b>${g}G</b>.`);
+        } else if (hero.gold >= 10) {
+            hero.gold -= 10;
+            forestLog(`A beggar asks for a few coins. You give <b>10G</b>.`);
+        } else {
+            forestLog(`A beggar asks for coins, but you have nothing to spare.`);
+        }
+        save();
+    }
+
+    function useCampKit() {
+        if ((hero.campKits||0) > 0) {
+            const cs = calcCombatStats();
+            hero.hp = cs.maxHp; hero.mana = cs.maxMp;
+            hero.campKits--;
+            save(); updateUI();
+            forestLog("You make camp and rest. HP and MP fully restored.");
+        } else {
+            alert("You have no camping kits. Buy one from the Market.");
+        }
+    }
+
+    // ============ COMBAT ============
+    function triggerCombat(dist) {
+        enemy = {...pickEncounter(dist)}; enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
+        document.getElementById('explore-ui').style.display='none'; document.getElementById('combat-ui').style.display='block';
+        document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
+        clearLog();
+        logMsg(`<b>A ${enemy.n} appears!</b>`);
+        closeCombatMenu();
+    }
+
+    function openCombatMenu(which) {
+        document.getElementById('combat-menu-main').style.display = 'none';
+        document.getElementById('combat-menu-skills').style.display = which === 'skills' ? 'block' : 'none';
+        document.getElementById('combat-menu-items').style.display = which === 'items' ? 'block' : 'none';
+        if (which === 'skills') renderCombatSkillsMenu();
+        if (which === 'items') renderCombatItemsMenu();
+    }
+    function closeCombatMenu() {
+        document.getElementById('combat-menu-main').style.display = 'block';
+        document.getElementById('combat-menu-skills').style.display = 'none';
+        document.getElementById('combat-menu-items').style.display = 'none';
+    }
+
+    function renderCombatSkillsMenu() {
+        let html = "";
+        const noSkillMsg = `<small style="opacity:.6; display:block; margin:10px 0;">No active skill learned yet — spend a skill point.</small>`;
+        if (hero.type === 'Fighter') {
+            const buttons = [];
+            const bashLvl = hero.skills['Bash'] || 0;
+            if (bashLvl > 0) buttons.push(`<button onclick="useSkill('Bash',${10+bashLvl*5},5)">BASH +${10+bashLvl*5} DMG (5 MP)</button>`);
+
+            const hasShieldSetup = hero.eq.wpn && hero.eq.wpn.hands===1 && hero.eq.shd;
+            const slamLvl = hero.skills['Shield Slam'] || 0;
+            if (slamLvl > 0 && hasShieldSetup) buttons.push(`<button onclick="useShieldSlam()">SHIELD SLAM +${slamLvl*8} DMG (6 MP)</button>`);
+            else if (slamLvl > 0) buttons.push(`<small style="opacity:.5; display:block;">Shield Slam known — requires a 1H weapon + shield</small>`);
+
+            const has2H = hero.eq.wpn && hero.eq.wpn.hands===2;
+            const cleaveLvl = hero.skills['Cleaving Strike'] || 0;
+            if (cleaveLvl > 0 && has2H) buttons.push(`<button onclick="useCleavingStrike()">CLEAVING STRIKE +${cleaveLvl*14} DMG (8 MP)</button>`);
+            else if (cleaveLvl > 0) buttons.push(`<small style="opacity:.5; display:block;">Cleaving Strike known — requires a 2H weapon</small>`);
+
+            html += buttons.length ? buttons.join('') : noSkillMsg;
+        } else if (hero.type === 'Archer') {
+            const buttons = [];
+            const dsLvl = hero.skills['Double Shot'] || 0;
+            if (dsLvl > 0) buttons.push(`<button onclick="useDoubleShot()">DOUBLE SHOT +${dsLvl*3}/arrow (6 MP)</button>`);
+
+            const hasBow = hero.eq.wpn && hero.eq.wpn.wt === 'bow';
+            const pierceLvl = hero.skills['Piercing Shot'] || 0;
+            if (pierceLvl > 0 && hasBow) buttons.push(`<button onclick="usePiercingShot()">PIERCING SHOT +${pierceLvl*9} DMG (6 MP)</button>`);
+            else if (pierceLvl > 0) buttons.push(`<small style="opacity:.5; display:block;">Piercing Shot known — requires a bow</small>`);
+
+            const hasCrossbow = hero.eq.wpn && hero.eq.wpn.wt === 'crossbow';
+            const rapidLvl = hero.skills['Rapid Reload'] || 0;
+            if (rapidLvl > 0 && hasCrossbow) buttons.push(`<button onclick="useRapidReload()">RAPID RELOAD +${rapidLvl*20}% CRIT (6 MP)</button>`);
+            else if (rapidLvl > 0) buttons.push(`<small style="opacity:.5; display:block;">Rapid Reload known — requires a crossbow</small>`);
+
+            html += buttons.length ? buttons.join('') : noSkillMsg;
+        } else if (hero.type === 'Mage') {
+            const spellButtons = [
+                ['Fireball','castFireball()',10],
+                ['Frost Lance','castFrostLance()',10],
+                ['Lightning Bolt','castLightning()',12],
+                ['Mind Spike','castMindSpike()',10],
+                ['Psychic Drain','castPsychicDrain()',12]
+            ].filter(([name]) => (hero.skills[name]||0) > 0)
+             .map(([name,fn,cost]) => `<button onclick="${fn}">${name} (${cost} MP)</button>`).join('');
+            html += spellButtons || noSkillMsg;
+        }
+        html += `<br><button onclick="closeCombatMenu()">BACK</button>`;
+        document.getElementById('combat-menu-skills').innerHTML = html;
+    }
+
+    function renderCombatItemsMenu() {
+        const html = `
+            <button onclick="usePotCombat('hp','s')">HP-S (${hero.pots_hp_s})</button>
+            <button onclick="usePotCombat('hp','m')">HP-M (${hero.pots_hp_m})</button>
+            <button onclick="usePotCombat('hp','l')">HP-L (${hero.pots_hp_l})</button>
+            <button onclick="usePotCombat('mp','s')">MP-S (${hero.pots_mp_s})</button>
+            <button onclick="usePotCombat('mp','m')">MP-M (${hero.pots_mp_m})</button>
+            <button onclick="usePotCombat('mp','l')">MP-L (${hero.pots_mp_l})</button>
+            <br><button onclick="closeCombatMenu()">BACK</button>`;
+        document.getElementById('combat-menu-items').innerHTML = html;
+    }
+
+    // Using an item is a full turn, same as attacking or casting — the enemy
+    // acts right after, so healing mid-fight is a real trade-off, not free.
+    function usePotCombat(kind, tier) {
+        const key = 'pots_'+kind+'_'+tier;
+        if ((hero[key]||0) <= 0) { alert("None left!"); return; }
+        usePot(kind, tier);
+        const size = tier === 's' ? 'small' : tier === 'm' ? 'medium' : 'large';
+        logMsg(kind === 'hp' ? `You drink a ${size} health potion.` : `You drink a ${size} mana potion.`);
+        closeCombatMenu();
+        enemyTurn();
+    }
+
+    function attemptFlee() {
+        const chance = 50 + Math.floor((hero.dex-1)/2)*5;
+        if (Math.random()*100 < chance) {
+            logMsg(`You break away and flee from the ${enemy.n}!`);
+            setTimeout(() => {
+                document.getElementById('combat-ui').style.display='none';
+                document.getElementById('explore-ui').style.display='block';
+            }, 800);
+        } else {
+            logMsg(`You try to flee from the ${enemy.n} but can't get away!`);
+            enemyTurn();
+        }
+    }
+
+    function useSkill(name, bonus, manaCost) {
+        manaCost = manaCost || 0;
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
+        if(r>=enemy.ac) {
+            let dmg = Math.floor(Math.random()*8)+cs.atk+bonus;
+            let isCrit = false;
+            if (cs.critChance && Math.random()*100 < cs.critChance) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+            enemy.curHp -= dmg;
+            applyWeaponElemental();
+            logMsg(`You use ${name} and hit the ${enemy.n} for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.`);
+        } else {
+            logMsg(`You use ${name} and miss!`);
+        }
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+
+    function useDoubleShot() {
+        const manaCost = 6;
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        const lvl = hero.skills['Double Shot'] || 0;
+        let totalDmg = 0; let hits = 0;
+        for (let i=0; i<2; i++) {
+            let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
+            if (r>=enemy.ac) {
+                let dmg = Math.floor(Math.random()*8)+cs.atk+lvl*3;
+                if (cs.critChance && Math.random()*100 < cs.critChance) dmg = Math.floor(dmg*1.5);
+                totalDmg += dmg; hits++;
+            }
+        }
+        enemy.curHp -= totalDmg;
+        if (hits > 0) applyWeaponElemental();
+        if (hits === 0) logMsg(`You fire Double Shot — both arrows miss!`);
+        else logMsg(`You fire Double Shot — ${hits}/2 arrows hit for <b>${totalDmg}</b> total damage.`);
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+
+    // Generic spell caster used by all Mage abilities: handles the mana cost,
+    // to-hit roll, and optional side effects (crit, chill, stun, lifesteal).
+    function castSpell(name, manaCost, dmgFn, opts) {
+        opts = opts || {};
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        let r=Math.floor(Math.random()*20)+1+Math.floor((hero.int-1)/2)+cs.toHitBonus;
+        if (r>=enemy.ac) {
+            let dmg = dmgFn(cs);
+            let isCrit = false;
+            if (opts.crit && Math.random()*100 < opts.crit) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+            enemy.curHp -= dmg;
+            let extra = '';
+            if (opts.stunChance && Math.random()*100 < opts.stunChance) { enemy.stunned = true; extra += ` The ${enemy.n} is <b>stunned</b>!`; }
+            if (opts.chill) { enemy.chilled = true; extra += ` The ${enemy.n} is <b>chilled</b>.`; }
+            if (opts.lifesteal) { const healed = Math.floor(dmg*opts.lifesteal); hero.hp = Math.min(cs.maxHp, hero.hp + healed); extra += ` You drain <b>${healed}</b> HP.`; }
+            logMsg(`You cast ${name} for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.${extra}`);
+        } else {
+            logMsg(`You cast ${name} and it fizzles — miss!`);
+        }
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+    function castFireball() { const lvl=hero.skills['Fireball']||0; castSpell('Fireball', 10, cs=>Math.floor(Math.random()*6)+cs.matk+lvl*8); }
+    function castFrostLance() { const lvl=hero.skills['Frost Lance']||0; castSpell('Frost Lance', 10, cs=>Math.floor(Math.random()*6)+cs.matk+lvl*5, {chill:true}); }
+    function castLightning() { const lvl=hero.skills['Lightning Bolt']||0; castSpell('Lightning Bolt', 12, cs=>Math.floor(Math.random()*6)+cs.matk+lvl*4, {crit:lvl*15}); }
+    function castMindSpike() { const lvl=hero.skills['Mind Spike']||0; castSpell('Mind Spike', 10, cs=>Math.floor(Math.random()*6)+cs.matk+lvl*6, {stunChance:lvl*10}); }
+    function castPsychicDrain() { const lvl=hero.skills['Psychic Drain']||0; castSpell('Psychic Drain', 12, cs=>Math.floor(Math.random()*6)+cs.matk+lvl*5, {lifesteal:0.5}); }
+
+    // ---- Fighter build-specific actives ----
+    function useShieldSlam() {
+        if (!(hero.eq.wpn && hero.eq.wpn.hands===1 && hero.eq.shd)) { alert("Requires a one-handed weapon and a shield equipped."); return; }
+        const manaCost = 6;
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        const lvl = hero.skills['Shield Slam'] || 0;
+        let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
+        if (r>=enemy.ac) {
+            let dmg = Math.floor(Math.random()*8)+cs.atk+lvl*8;
+            let isCrit = false;
+            if (cs.critChance && Math.random()*100 < cs.critChance) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+            enemy.curHp -= dmg;
+            applyWeaponElemental();
+            let extra = '';
+            if (Math.random()*100 < lvl*6) { enemy.stunned = true; extra = ` The ${enemy.n} is <b>stunned</b>!`; }
+            logMsg(`You slam your shield into the ${enemy.n} for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.${extra}`);
+        } else {
+            logMsg(`You attempt a Shield Slam and miss!`);
+        }
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+    function useCleavingStrike() {
+        if (!(hero.eq.wpn && hero.eq.wpn.hands===2)) { alert("Requires a two-handed weapon equipped."); return; }
+        const manaCost = 8;
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        const lvl = hero.skills['Cleaving Strike'] || 0;
+        let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
+        if (r>=enemy.ac) {
+            let dmg = Math.floor(Math.random()*8)+cs.atk+lvl*14;
+            let isCrit = false;
+            if (cs.critChance && Math.random()*100 < cs.critChance) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+            enemy.curHp -= dmg;
+            applyWeaponElemental();
+            logMsg(`You bring your weapon down in a heavy Cleaving Strike for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.`);
+        } else {
+            logMsg(`You swing a Cleaving Strike and miss!`);
+        }
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+
+    // ---- Archer build-specific actives ----
+    function usePiercingShot() {
+        if (!(hero.eq.wpn && hero.eq.wpn.wt==='bow')) { alert("Requires a bow equipped."); return; }
+        const manaCost = 6;
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        const lvl = hero.skills['Piercing Shot'] || 0;
+        // An aimed shot that can't miss — no to-hit roll needed.
+        let dmg = Math.floor(Math.random()*8)+cs.atk+lvl*9;
+        let isCrit = false;
+        if (cs.critChance && Math.random()*100 < cs.critChance) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+        enemy.curHp -= dmg;
+        applyWeaponElemental();
+        logMsg(`You loose a Piercing Shot, striking true for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.`);
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+    function useRapidReload() {
+        if (!(hero.eq.wpn && hero.eq.wpn.wt==='crossbow')) { alert("Requires a crossbow equipped."); return; }
+        const manaCost = 6;
+        if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
+        hero.mana -= manaCost;
+        const cs = calcCombatStats();
+        const lvl = hero.skills['Rapid Reload'] || 0;
+        let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
+        if (r>=enemy.ac) {
+            let dmg = Math.floor(Math.random()*8)+cs.atk;
+            let isCrit = false;
+            const boostedCrit = (cs.critChance||0) + lvl*20;
+            if (Math.random()*100 < boostedCrit) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+            enemy.curHp -= dmg;
+            applyWeaponElemental();
+            logMsg(`You snap-fire a Rapid Reload bolt for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.`);
+        } else {
+            logMsg(`You fire a hasty bolt and miss!`);
+        }
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+
+    function attack() {
+        const cs = calcCombatStats();
+        let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
+        if(r>=enemy.ac) {
+            let dmg = Math.floor(Math.random()*8)+cs.atk;
+            let isCrit = false;
+            if (cs.critChance && Math.random()*100 < cs.critChance) { dmg = Math.floor(dmg*1.5); isCrit = true; }
+            enemy.curHp -= dmg;
+            applyWeaponElemental();
+            logMsg(`You hit the ${enemy.n} for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.`);
+        } else {
+            logMsg(`You attack and miss!`);
+        }
+        if(enemy.curHp<=0) win(); else enemyTurn();
+        closeCombatMenu();
+        updateUI();
+    }
+    function enemyTurn() {
+        document.getElementById('atk-btn').disabled=true;
+        setTimeout(()=>{
+            // Damage-over-time (Burn/Poison) ticks at the start of the enemy's turn,
+            // even if they're stunned — fire and poison don't care.
+            if (enemy.dot && enemy.dot.turns > 0) {
+                enemy.curHp -= enemy.dot.dmg;
+                logMsg(`The ${enemy.n} takes <b>${enemy.dot.dmg}</b> ${enemy.dot.type} damage.`);
+                enemy.dot.turns--;
+                if (enemy.dot.turns <= 0) enemy.dot = null;
+                updateUI();
+                if (enemy.curHp <= 0) { win(); return; }
+            }
+            if (enemy.stunned) {
+                enemy.stunned = false;
+                logMsg(`The ${enemy.n} is stunned and can't act!`);
+                document.getElementById('atk-btn').disabled=false; updateUI();
+                return;
+            }
+            const cs = calcCombatStats();
+            const wasChilled = enemy.chilled; enemy.chilled = false;
+            let r=Math.floor(Math.random()*20)+1+enemy.b;
+            if(r>=cs.def) {
+                let raw = Math.floor(Math.random()*8)+1;
+                if (wasChilled) raw = Math.floor(raw/2);
+                let dmg = Math.max(1, raw);
+
+                // Mana Shield (Mage passive) — divert a portion of incoming damage to Mana
+                const msLvl = hero.skills['Mana Shield'] || 0;
+                if (msLvl && hero.mana > 0) {
+                    const absorbPct = Math.min(1, msLvl*0.1);
+                    const manaAbsorb = Math.min(hero.mana, Math.floor(dmg*absorbPct));
+                    hero.mana -= manaAbsorb; dmg -= manaAbsorb;
+                }
+                dmg = Math.max(0, dmg);
+                hero.hp -= dmg;
+                logMsg(`The ${enemy.n} hits you for <b>${dmg}</b> damage${wasChilled?' (chilled — halved)':''}.`);
+                applyShieldElemental();
+            } else {
+                logMsg(`The ${enemy.n} attacks and misses!`);
+            }
+            if(hero.hp<=0){ logMsg(`<b>You have died...</b>`); alert("You died!"); location.reload(); } else { document.getElementById('atk-btn').disabled=false; updateUI(); }
+        },600);
+    }
+    function win() {
+        const goldGain = enemy.g;
+        const xpGain = enemy.xp;
+        hero.gold += goldGain;
+        hero.xp += xpGain;
+        registerKill(enemy.n);
+
+        const cs = calcCombatStats();
+        let lootMsgs = [];
+        (enemy.loot||[]).forEach(l => {
+            if (l.type === 'equip') {
+                if (Math.random()*100 < l.chance) {
+                    addToInventory(l.item.slot, l.item);
+                    lootMsgs.push(`<span class="rtxt-${l.item.r}">${l.item.n}</span> (equipment!)`);
+                }
+            } else if (Math.random()*100 < Math.min(100, l.chance + cs.lootChanceBonus)) {
+                const qty = l.min + Math.floor(Math.random()*(l.max-l.min+1));
+                gainMaterial(l.name, qty);
+                lootMsgs.push(`${qty}x ${l.name}`);
+            }
+        });
+
+        logMsg(`<b>You defeated the ${enemy.n}!</b>`);
+        logMsg(`Gained <b>${goldGain}G</b> and <b>${xpGain} XP</b>.`);
+        logMsg(lootMsgs.length ? `Loot: ${lootMsgs.join(', ')}` : `No loot dropped.`);
+
+        let leveledUp = false;
+        while (hero.xp >= xpForLevel(hero.lvl)) {
+            hero.xp -= xpForLevel(hero.lvl);
+            hero.lvl++; hero.sp+=3; hero.skp+=1;
+            leveledUp = true;
+        }
+        if (leveledUp) logMsg(`<b>LEVEL UP! You are now level ${hero.lvl}.</b>`);
+
+        setTimeout(() => {
+            document.getElementById('combat-ui').style.display='none';
+            document.getElementById('explore-ui').style.display='block';
+            save(); updateUI();
+        }, 1400);
+    }
+    function rest() { if(hero.gold>=15){ hero.gold-=15; hero.hp=hero.con*10; hero.mana=hero.int*5; save(); updateUI(); } }
+    function upgradeStat(s) { if(hero.sp>0){ hero[s]++; hero.sp--; save(); updateUI(); renderProfile(); } }
+    function upSkill(n) {
+        if (hero.skp<=0) return;
+        const tree = SKILL_TREES[hero.type] || [];
+        const def = tree.find(s => s.n === n);
+        if (!def) return;
+        const cap = SKILL_CAP[def.type] || 5;
+        const cur = hero.skills[n] || 0;
+        if (cur >= cap) { alert(`${n} is already at max level (${cap}).`); return; }
+        hero.skills[n] = cur+1; hero.skp--; save(); renderProfile();
+    }
+    // Fire-and-forget by design (matches how save() is called ~30+ places
+    // throughout the game without awaiting) — errors are logged, not blocking.
+    async function save() {
+        if (!currentUser || !hero) return;
+        const { error } = await sb.from('heroes').upsert({
+            user_id: currentUser.id,
+            name: hero.name,
+            data: hero,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,name' });
+        if (error) console.error('Save failed:', error.message);
+    }
+    async function resetGame() {
+        if (!hero) { location.reload(); return; }
+        if (!confirm(`Delete ${hero.name}? This cannot be undone.`)) return;
+        const { error } = await sb.from('heroes').delete().eq('user_id', currentUser.id).eq('name', hero.name);
+        if (error) { alert("Could not delete character: " + error.message); return; }
+        location.reload();
+    }
+    function tryReturnToCity() {
+        if (hero.x === 0 && hero.y === 0) { showScreen('town-screen'); updateUI(); }
+        else { alert("You're too far from Ashmere to walk back directly. Head to (0,0) on the map, or use a Return Scroll."); }
+    }
+    function useReturnScroll() {
+        if ((hero.returnScrolls||0) <= 0) { alert("You have no Return Scrolls. Buy one at the Market."); return; }
+        if (hero.x === 0 && hero.y === 0) { alert("You're already in Ashmere."); return; }
+        hero.returnScrolls--;
+        hero.x = 0; hero.y = 0;
+        save();
+        showScreen('town-screen'); updateUI();
+    }
+    function enterForest() { hero.x=0; hero.y=0; document.getElementById('coord-text').innerText='Location: 0,0'; document.getElementById('forest-log').innerHTML = 'You step past the tree line. Somewhere ahead, the Ember hums.'; showScreen('forest-screen'); updateUI(); }
+    const POT_HEAL = { hp: {s:20, m:50, l:100}, mp: {s:15, m:35, l:70} };
+    function usePot(kind, tier) {
+        const amt = POT_HEAL[kind][tier];
+        const key = 'pots_'+kind+'_'+tier;
+        if ((hero[key]||0) > 0) {
+            const cs = calcCombatStats();
+            if (kind === 'hp') hero.hp = Math.min(cs.maxHp, hero.hp+amt);
+            else hero.mana = Math.min(cs.maxMp, hero.mana+amt);
+            hero[key]--;
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        const cs = calcCombatStats();
+        document.getElementById('h-hp-t').innerText=Math.floor(hero.hp)+"/"+cs.maxHp; document.getElementById('h-mp-t').innerText=Math.floor(hero.mana)+"/"+cs.maxMp;
+        document.getElementById('h-xp-t').innerText=hero.xp; document.getElementById('h-hp-f').style.width=(hero.hp/cs.maxHp*100)+"%";
+        document.getElementById('h-mp-f').style.width=(hero.mana/cs.maxMp*100)+"%";
+        const xpMax = xpForLevel(hero.lvl);
+        document.getElementById('h-xp-max').innerText = xpMax;
+        document.getElementById('h-xp-f').style.width = (hero.xp/xpMax*100)+"%";
+        document.getElementById('h-gold-t').innerText=hero.gold; document.getElementById('h-name-disp').innerText=hero.name;
+        document.getElementById('h-dist-t').innerText=(Math.abs(hero.x)+Math.abs(hero.y))*50;
+        const cityBtn = document.getElementById('city-btn');
+        if (cityBtn) cityBtn.disabled = !(hero.x === 0 && hero.y === 0);
+        const scrollEl = document.getElementById('p-scroll');
+        if (scrollEl) scrollEl.innerText = hero.returnScrolls || 0;
+        if(enemy.curHp !== undefined) document.getElementById('e-hp-f').style.width=Math.max(0, (enemy.curHp/enemy.hp*100))+"%";
+    }
+</script>
+</body>
+</html>
