@@ -1227,7 +1227,7 @@
         { n:"Skeleton", hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
           loot:[{name:"Goblin Bones", chance:70, min:1, max:5}] },
         // Undead theme (The Ridge, deepening past the Skeleton band)
-        { n:"Wraith", hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/wraith.png", l:600,
+        { n:"Wraith", hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
           loot:[
             {name:"Wraith Essence", chance:65, min:1, max:2},
             {name:"Ember Shard", chance:10, min:1, max:1}
@@ -1235,7 +1235,7 @@
         { n:"Ghoul", hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
           loot:[{name:"Ghoul Claw", chance:65, min:1, max:3}] },
         // Water-loving theme (The Sunken Bog)
-        { n:"Bog Wretch", hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/bog wretch.jpg", l:800,
+        { n:"Bog Wretch", hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
           loot:[
             {name:"Slick Bog Scale", chance:65, min:1, max:3},
             {type:"equip", item: bogBoots[1], chance:8},
@@ -1244,21 +1244,21 @@
             {type:"equip", item: bogtideBulwark, chance:5},
             {type:"equip", item: waterloggedGreathelm, chance:5}
           ] },
-        { n:"Reed Serpent", hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/reed serpent.jpg", l:950,
+        { n:"Reed Serpent", hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
           loot:[
             {name:"Serpent Scale", chance:65, min:1, max:3},
             {type:"equip", item: reedSerpentsFang, chance:6},
             {type:"equip", item: reedScaledCuirass, chance:5}
           ] },
         // Subterranean/insectoid theme (The Old Mine)
-        { n:"Deepmine Crawler", hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/deepmine crawler.jpg", l:1200,
+        { n:"Deepmine Crawler", hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
           loot:[
             {name:"Chitin Shard", chance:65, min:1, max:3},
             {type:"equip", item: deepmineHoods[1], chance:8},
             {type:"equip", item: deepmineHoods[2], chance:2},
             {type:"equip", item: deepmineRepeater, chance:6}
           ] },
-        { n:"Tunnel Broodling", hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/tunnel broodling.jpg", l:1400,
+        { n:"Tunnel Broodling", hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
           loot:[
             {name:"Brood Silk", chance:65, min:1, max:3},
             {type:"equip", item: crawlerSilkRecurve, chance:6},
@@ -1266,14 +1266,14 @@
             {type:"equip", item: broodlingTreads, chance:5}
           ] },
         // Corrupted nature theme (The Blightwood)
-        { n:"Blightwood Stalker", hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/blightwood-stalker.jpg", l:1700,
+        { n:"Blightwood Stalker", hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
           loot:[
             {name:"Blighted Bark", chance:65, min:1, max:3},
             {type:"equip", item: blightRobes[1], chance:8},
             {type:"equip", item: blightRobes[2], chance:2},
             {type:"equip", item: blightstepSlippers, chance:5}
           ] },
-        { n:"Rotroot Horror", hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/rotroot horror.jpg", l:1950,
+        { n:"Rotroot Horror", hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
           loot:[
             {name:"Rotroot Sap", chance:65, min:1, max:3},
             {type:"equip", item: rotrootWandstaff, chance:6},
@@ -1284,7 +1284,7 @@
     // Ember Wisp — rare special encounter (not a normal tier monster), can appear
     // instead of a Skeleton once you're deep enough in.
     const EMBER_WISP = {
-        n:"Ember Wisp", hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/ember wisp.jpg",
+        n:"Ember Wisp", hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
         zoneMin:500, zoneMax:799, encounterChance:8,
         loot:[
             {name:"Ember Shard", chance:100, min:1, max:2},
@@ -1296,19 +1296,19 @@
     // guards the legendary tier of that zone's gear line; Cinderkin guards its
     // own exclusive weapon instead of a shared set.
     const BOSSES = [
-        { n:"The Drowned King", hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/the drowned king.jpg",
+        { n:"The Drowned King", hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
           zoneMin:800, zoneMax:1199, encounterChance:8,
           loot:[
             {name:"Slick Bog Scale", chance:100, min:2, max:4},
             {type:"equip", item: bogBoots[3], chance:25}
           ] },
-        { n:"The Unlit Warden", hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/the unlit warden.jpg",
+        { n:"The Unlit Warden", hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
           zoneMin:1200, zoneMax:1699, encounterChance:8,
           loot:[
             {name:"Chitin Shard", chance:100, min:2, max:4},
             {type:"equip", item: deepmineHoods[3], chance:25}
           ] },
-        { n:"The Blight Heart", hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/the blight heart.jpg",
+        { n:"The Blight Heart", hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
           zoneMin:1700, zoneMax:2199, encounterChance:8,
           loot:[
             {name:"Blighted Bark", chance:100, min:2, max:4},
