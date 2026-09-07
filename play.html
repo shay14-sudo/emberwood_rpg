@@ -313,6 +313,7 @@
                     <p style="color:var(--gold); margin:2px;">Stat Points: <span id="m-sp"></span></p>
                 </div>
                 <div id="m-summary" class="summary-box"></div>
+                <div id="m-elemental" class="summary-box" style="margin-top:8px;"></div>
             </div>
             <div><!-- Column 2 -->
                 <h4 style="text-align:center; margin:0;">EQUIPMENT</h4>
@@ -818,16 +819,13 @@
         });
 
         const cs = calcCombatStats();
-        const wpnElem = hero.eq.wpn ? elementalTag(hero.eq.wpn) : '';
-        const shdElem = hero.eq.shd ? elementalTag(hero.eq.shd) : '';
-        const elemLine = [wpnElem, shdElem].filter(Boolean).join(' | ');
         document.getElementById('m-summary').innerHTML =
             `<b>ATTACK: ${cs.atk}</b><br><small>${cs.atkBreakdown.join(' | ')}</small><hr>` +
             `<b>MAGIC ATTACK: ${cs.matk}</b><br><small>${cs.matkBreakdown.join(' | ')}</small><hr>` +
             `<b>DEFENSE: ${cs.def}</b><br><small>${cs.defBreakdown.join(' | ')}</small><hr>` +
             `<b>CRIT CHANCE: ${cs.critChance}%</b>` + (cs.toHitBonus ? ` | <b>TO-HIT: +${cs.toHitBonus}</b>` : '') +
-            (cs.gearCritBonus || cs.gearHpBonus ? `<br><small style="opacity:.7;">Gear rarity bonus: +${cs.gearCritBonus}% crit, +${cs.gearHpBonus} HP</small>` : '') +
-            (elemLine ? `<hr><b>ELEMENTAL:</b><br><small style="color:#f7a84e;">${elemLine}</small>` : '');
+            (cs.gearCritBonus || cs.gearHpBonus ? `<br><small style="opacity:.7;">Gear rarity bonus: +${cs.gearCritBonus}% crit, +${cs.gearHpBonus} HP</small>` : '');
+        renderElementalPanel();
 
         ['str','dex','int','con','luk'].forEach(s => document.getElementById('btn-'+s).disabled = hero.sp <= 0);
 
@@ -860,6 +858,48 @@
         if (item.wt === 'staff') return `${chance}% chance to Shock (stun)`;
         if (item.slot === 'shd' || item.isShield) return `${chance}% chance to Chill attacker (Ice)`;
         return '';
+    }
+
+    // Full elemental breakdown for the character sheet — every source, equipment
+    // or skill, that gives the hero an elemental effect, each labelled with
+    // exactly where it comes from (not just a single summarized line).
+    function renderElementalPanel() {
+        const el = document.getElementById('m-elemental');
+        if (!el) return;
+        const rows = [];
+
+        if (hero.eq.wpn) {
+            const tag = elementalTag(hero.eq.wpn);
+            if (tag) rows.push(`<b>${hero.eq.wpn.n}</b> <small style="opacity:.6;">(weapon)</small> — ${tag}`);
+        }
+        if (hero.eq.shd) {
+            const tag = elementalTag(hero.eq.shd);
+            if (tag) rows.push(`<b>${hero.eq.shd.n}</b> <small style="opacity:.6;">(shield)</small> — ${tag}`);
+        }
+
+        // Mage's own elemental spells count as a skill-based source, distinct
+        // from the always-on equipment procs above.
+        const spellElements = [
+            ['Fireball', 'Fire'], ['Frost Lance', 'Ice'], ['Lightning Bolt', 'Lightning']
+        ];
+        spellElements.forEach(([spell, elem]) => {
+            const lvl = hero.skills[spell] || 0;
+            if (lvl > 0) rows.push(`<b>${spell}</b> <small style="opacity:.6;">(skill, lvl ${lvl})</small> — deals ${elem} damage`);
+        });
+
+        let html = `<b>ELEMENTAL</b><br>`;
+        html += rows.length ? rows.join('<br>') : `<small style="opacity:.6;">No elemental sources yet — equip a rare+ weapon/shield, or learn an elemental spell.</small>`;
+
+        // If we're mid-fight, also surface the current enemy's known weakness/resistance —
+        // this is the one piece of "elemental" info that's about the enemy, not the hero.
+        if (enemy && enemy.n && document.getElementById('combat-ui').style.display === 'block') {
+            const enemyLines = [];
+            if (enemy.elemWeak) enemyLines.push(`Weak to <b>${enemy.elemWeak}</b>`);
+            if (enemy.elemResist) enemyLines.push(`Resists <b>${enemy.elemResist}</b>`);
+            if (enemyLines.length) html += `<hr><b>${enemy.n}</b><br><small style="color:#f7a84e;">${enemyLines.join(' | ')}</small>`;
+        }
+
+        el.innerHTML = html;
     }
 
     // Turns an item's raw stats into a short readable line — used in the
@@ -1819,6 +1859,7 @@
         document.getElementById('combat-menu-skills').style.display = 'none';
         document.getElementById('combat-menu-items').style.display = 'none';
         document.getElementById('combat-menu-victory').style.display = 'none';
+        document.getElementById('atk-btn').disabled = false;
     }
 
     function renderCombatSkillsMenu() {
