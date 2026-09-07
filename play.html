@@ -40,6 +40,7 @@
         .eq-slot:hover { border-color: var(--accent); box-shadow: 0 0 10px rgba(79,227,201,.3); }
         .eq-slot img { max-width: 90%; max-height: 90%; }
         .eq-slot::after { content: attr(data-label); position: absolute; bottom: -14px; font-size: 8px; letter-spacing: 1px; color: #6e8299; }
+        .eq-item-name { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 76px; text-align: center; }
         .slot-shadow img { opacity: 0.3; }
 
         .list-box { background: #060a12; border: 1px solid var(--accent); border-radius: 8px; padding: 10px; height: 340px; overflow-y: auto; font-size: 12px; }
@@ -118,6 +119,16 @@
         button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
         button:disabled::before, button:disabled::after { display: none; }
         .log { height: 100px; overflow-y: scroll; background: #060a12; color: #f2c94c; padding: 10px; text-align: left; font-family: monospace; border: 1px solid var(--accent); border-radius: 6px; font-size: 12px; }
+        .combat-portraits { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 16px; align-items: start; margin-bottom: 14px; }
+        .combat-portraits .log { height: 220px; }
+        .portrait-frame { width: 100%; max-width: 220px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px; border: 2px solid; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
+        @media (max-width: 700px) {
+            .combat-portraits { grid-template-columns: 1fr 1fr; grid-template-areas: "hero enemy" "log log"; }
+            .combat-portraits > div:first-child { grid-area: hero; }
+            .combat-portraits > #combat-log { grid-area: log; height: 140px; }
+            .combat-portraits > div:last-child { grid-area: enemy; }
+            .portrait-frame { max-width: 140px; }
+        }
 
         /* Rarity (shared by eq-slots and item-cards) */
         .common { border-color: #5a7185 !important; } .rare { border-color: #4aa3e8 !important; }
@@ -263,12 +274,18 @@
             <br><button onclick="showScreen('map-screen')">MAP</button> <button onclick="useCampKit()">MAKE CAMP (<span id="p-camp"></span>)</button> <button onclick="useReturnScroll()">RETURN SCROLL (<span id="p-scroll"></span>)</button>
         </div>
         <div id="combat-ui" class="panel" style="display:none;">
-            <div style="display:flex; justify-content:space-around; align-items:center;">
-                <img id="c-h-img" width="220">
-                <div style="font-size:20px;">VS</div>
-                <div><img id="c-e-img" width="110"><div class="bar"><div id="e-hp-f" class="hp-fill"></div></div><small id="e-name"></small></div>
+            <div class="combat-portraits">
+                <div style="text-align:center;">
+                    <img id="c-h-img" class="portrait-frame" style="border-color:var(--accent);">
+                    <small id="h-name-in-combat" style="opacity:.7;"></small>
+                </div>
+                <div id="combat-log" class="log"></div>
+                <div style="text-align:center;">
+                    <img id="c-e-img" class="portrait-frame" style="border-color:#8b2f3a;">
+                    <div class="bar" style="margin-top:6px;"><div id="e-hp-f" class="hp-fill"></div></div>
+                    <small id="e-name"></small>
+                </div>
             </div>
-            <div id="combat-log" class="log"></div>
 
             <div id="combat-menu-main">
                 <button id="atk-btn" onclick="attack()">ATTACK</button>
@@ -278,6 +295,7 @@
             </div>
             <div id="combat-menu-skills" style="display:none;"></div>
             <div id="combat-menu-items" style="display:none;"></div>
+            <div id="combat-menu-victory" style="display:none;"><button onclick="continueAfterVictory()">CONTINUE</button></div>
         </div>
     </div></div>
 
@@ -790,17 +808,26 @@
 
         ['head','body','wpn','shd','boots'].forEach(s => {
             let el = document.getElementById('slot-'+s); el.className="eq-slot"; el.innerHTML="";
-            if(s==='shd' && hero.eq.wpn && hero.eq.wpn.hands===2) { el.innerHTML=`<img src="${hero.eq.wpn.img}" onerror="this.onerror=null;this.src=phImg();">`; el.classList.add('slot-shadow', hero.eq.wpn.r); }
-            else if(hero.eq[s]) { el.innerHTML=`<img src="${hero.eq[s].img}" onerror="this.onerror=null;this.src=phImg();">`; el.classList.add(hero.eq[s].r); }
+            if(s==='shd' && hero.eq.wpn && hero.eq.wpn.hands===2) {
+                el.innerHTML=`<img src="${hero.eq.wpn.img}" onerror="this.onerror=null;this.src=phImg();" title="${hero.eq.wpn.n}"><div class="eq-item-name rtxt-${hero.eq.wpn.r}">${hero.eq.wpn.n}</div>`;
+                el.classList.add('slot-shadow', hero.eq.wpn.r);
+            } else if(hero.eq[s]) {
+                el.innerHTML=`<img src="${hero.eq[s].img}" onerror="this.onerror=null;this.src=phImg();" title="${hero.eq[s].n}"><div class="eq-item-name rtxt-${hero.eq[s].r}">${hero.eq[s].n}</div>`;
+                el.classList.add(hero.eq[s].r);
+            }
         });
 
         const cs = calcCombatStats();
+        const wpnElem = hero.eq.wpn ? elementalTag(hero.eq.wpn) : '';
+        const shdElem = hero.eq.shd ? elementalTag(hero.eq.shd) : '';
+        const elemLine = [wpnElem, shdElem].filter(Boolean).join(' | ');
         document.getElementById('m-summary').innerHTML =
             `<b>ATTACK: ${cs.atk}</b><br><small>${cs.atkBreakdown.join(' | ')}</small><hr>` +
             `<b>MAGIC ATTACK: ${cs.matk}</b><br><small>${cs.matkBreakdown.join(' | ')}</small><hr>` +
             `<b>DEFENSE: ${cs.def}</b><br><small>${cs.defBreakdown.join(' | ')}</small><hr>` +
             `<b>CRIT CHANCE: ${cs.critChance}%</b>` + (cs.toHitBonus ? ` | <b>TO-HIT: +${cs.toHitBonus}</b>` : '') +
-            (cs.gearCritBonus || cs.gearHpBonus ? `<br><small style="opacity:.7;">Gear rarity bonus: +${cs.gearCritBonus}% crit, +${cs.gearHpBonus} HP</small>` : '');
+            (cs.gearCritBonus || cs.gearHpBonus ? `<br><small style="opacity:.7;">Gear rarity bonus: +${cs.gearCritBonus}% crit, +${cs.gearHpBonus} HP</small>` : '') +
+            (elemLine ? `<hr><b>ELEMENTAL:</b><br><small style="color:#f7a84e;">${elemLine}</small>` : '');
 
         ['str','dex','int','con','luk'].forEach(s => document.getElementById('btn-'+s).disabled = hero.sp <= 0);
 
@@ -927,6 +954,7 @@
         hoods.forEach((hd,i) => h += itemCard(hd, `<div class="item-stat def">+${hd.d} DEF</div>`, `buyHelm(hoods[${i}])`));
         hats.forEach((hd,i) => h += itemCard(hd, `<div class="item-stat def">+${hd.d} DEF</div>`, `buyHelm(hats[${i}])`));
         h += itemCard(deepmineHoods[0], `<div class="item-stat def">+${deepmineHoods[0].d} DEF</div>`, `buyHelm(deepmineHoods[0])`);
+        h += itemCard(raidersCowl[0], `<div class="item-stat def">+${raidersCowl[0].d} DEF</div>`, `buyHelm(raidersCowl[0])`);
         h += `</div>`;
 
         // ---- Body (every body-armor line, merged by slot) ----
@@ -935,6 +963,7 @@
         mArmor.forEach((a,i) => h += itemCard(a, `<div class="item-stat def">+${a.d} DEF</div>`, `buyArmor(mArmor[${i}])`));
         robes.forEach((a,i) => h += itemCard(a, `<div class="item-stat def">+${a.d} DEF</div>`, `buyArmor(robes[${i}])`));
         h += itemCard(blightRobes[0], `<div class="item-stat def">+${blightRobes[0].d} DEF</div>`, `buyArmor(blightRobes[0])`);
+        h += itemCard(roadwardenArmor[0], `<div class="item-stat def">+${roadwardenArmor[0].d} DEF</div>`, `buyArmor(roadwardenArmor[0])`);
         h += `</div>`;
 
         // ---- Boots (every boots line, merged by slot) ----
@@ -943,6 +972,7 @@
         mBoots.forEach((b,i) => h += itemCard(b, `<div class="item-stat def">+${b.d} DEF</div>`, `buyBoots(mBoots[${i}])`));
         mageBoots.forEach((b,i) => h += itemCard(b, `<div class="item-stat def">+${b.d} DEF</div>`, `buyBoots(mageBoots[${i}])`));
         h += itemCard(bogBoots[0], `<div class="item-stat def">+${bogBoots[0].d} DEF</div>`, `buyBoots(bogBoots[0])`);
+        h += itemCard(blackroadStriders[0], `<div class="item-stat def">+${blackroadStriders[0].d} DEF</div>`, `buyBoots(blackroadStriders[0])`);
         h += `</div>`;
 
         document.getElementById('shop-container').innerHTML = h;
@@ -1072,10 +1102,11 @@
     // existing monster distance bands (dist = (|x|+|y|)*50m):
     // Wolf territory starts at 0m, Goblin territory at 200m (|x|+|y|>=4),
     // Skeleton territory at 500m (|x|+|y|>=10).
-    const MAP_BOUNDS = { minX:-4, maxX:28, minY:-4, maxY:20 };
+    const MAP_BOUNDS = { minX:-12, maxX:28, minY:-6, maxY:20 };
     const MAP_SCALE = 40;
     const POIS = [
         { name:"Ashmere", x:0, y:0, icon:"town" },
+        { name:"The Broken Road", x:-6, y:0, icon:"bandit" },
         { name:"Wolf's Run", x:2, y:0, icon:"wolf" },
         { name:"Hollow's Edge", x:4, y:2, icon:"goblin" },
         { name:"The Ridge", x:7, y:5, icon:"ridge" },
@@ -1105,6 +1136,11 @@
         if (type === 'town') {
             return `<rect x="${x-13}" y="${y-6}" width="26" height="19" fill="#8a5a2b" stroke="#f2c94c" stroke-width="1.5"/>` +
                    `<polygon points="${x-16},${y-6} ${x},${y-22} ${x+16},${y-6}" fill="#5a3a1a" stroke="#f2c94c" stroke-width="1.5"/>`;
+        }
+        if (type === 'bandit') {
+            return `<circle cx="${x}" cy="${y-4}" r="9" fill="#3a3228" stroke="#8b7355" stroke-width="1.5"/>` +
+                   `<rect x="${x-9}" y="${y-6}" width="18" height="4" fill="#3a3228" stroke="#8b7355" stroke-width="1"/>` +
+                   `<line x1="${x-9}" y1="${y+10}" x2="${x+9}" y2="${y-8}" stroke="#c0392b" stroke-width="2.5"/>`;
         }
         if (type === 'wolf') {
             return `<circle cx="${x}" cy="${y}" r="13" fill="#3a4a5a" stroke="#b9c6d4" stroke-width="1.5"/>` +
@@ -1232,23 +1268,89 @@
     const rotrootCap         = { n:"Rotroot Cap", c:210, d:7, r:"rare", slot:"head", cls:["Mage"], minLvl:11, buyable:false, img:"items/hat/rotroot-cap.png" };
     const blightstepSlippers = { n:"Blightstep Slippers", c:210, d:7, r:"rare", slot:"boots", cls:["Mage"], minLvl:11, buyable:false, img:"items/shoes/blightstep-slippers.jpg" };
 
+    // ============ THE BROKEN ROAD (west of Ashmere, goblin-tier) ============
+    // A second zone-exclusive gear line per class, this time reachable early —
+    // deliberately gentler minLvl curve (1/3/6/10) since this zone sits at
+    // roughly the same difficulty as the Goblins on the main road.
+    const roadwardenArmor = [
+        { n:"Roadwarden's Vest", c:70, d:3, r:"common", minLvl:1, buyable:true, slot:"body", cls:["Fighter"], img:"items/h.armor/roadwardens-vest.jpg" },
+        { n:"Roadwarden's Brigandine", c:260, d:6, r:"rare", minLvl:3, buyable:false, slot:"body", cls:["Fighter"], img:"items/h.armor/roadwardens-brigandine.jpg" },
+        { n:"Captain's Blackroad Plate", c:700, d:12, r:"unique", minLvl:6, buyable:false, slot:"body", cls:["Fighter"], img:"items/h.armor/captains-blackroad-plate.jpg" },
+        { n:"The Reaver's Blacksteel Cuirass", c:2400, d:22, r:"legendary", minLvl:10, buyable:false, slot:"body", cls:["Fighter"], img:"items/h.armor/reavers-blacksteel-cuirass.jpg" }
+    ];
+    const blackroadStriders = [
+        { n:"Cutpurse's Treads", c:50, d:3, r:"common", minLvl:1, buyable:true, slot:"boots", cls:["Archer"], img:"items/m.boots/cutpurses-treads.jpg" },
+        { n:"Quickstep Boots", c:200, d:6, r:"rare", minLvl:3, buyable:false, slot:"boots", cls:["Archer"], img:"items/m.boots/quickstep-boots.jpg" },
+        { n:"Highwayman's Swift Boots", c:600, d:12, r:"unique", minLvl:6, buyable:false, slot:"boots", cls:["Archer"], img:"items/m.boots/highwaymans-swift-boots.jpg" },
+        { n:"The Reaver's Shadowstep Boots", c:2200, d:22, r:"legendary", minLvl:10, buyable:false, slot:"boots", cls:["Archer"], img:"items/m.boots/reavers-shadowstep-boots.jpg" }
+    ];
+    const raidersCowl = [
+        { n:"Ashen Road Cap", c:50, d:3, r:"common", minLvl:1, buyable:true, slot:"head", cls:["Mage"], img:"items/hat/ashen-road-cap.jpg" },
+        { n:"Cutpurse's Hexcowl", c:200, d:6, r:"rare", minLvl:3, buyable:false, slot:"head", cls:["Mage"], img:"items/hat/cutpurses-hexcowl.jpg" },
+        { n:"Bandit Queen's Circlet", c:600, d:12, r:"unique", minLvl:6, buyable:false, slot:"head", cls:["Mage"], img:"items/hat/bandit-queens-circlet.jpg" },
+        { n:"The Reaver's Blackflame Crown", c:2200, d:22, r:"legendary", minLvl:10, buyable:false, slot:"head", cls:["Mage"], img:"items/hat/reavers-blackflame-crown.jpg" }
+    ];
+
+    // Five regular bandits + one boss, all deliberately scaled around Goblin's
+    // own stats (hp:30 ac:13 b:4 xp:60 g:30) — this zone sits due WEST of
+    // Ashmere (x<0), a different direction from the main road entirely, so it
+    // never competes with the Goblin encounter for the same distance band.
+    const WEST_MONSTERS = [
+        { n:"Road Thug", elemWeak:"Fire", hp:28, ac:12, b:4, xp:55, g:26, img:"cretures/road thug.png",
+          loot:[
+            {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
+            {type:"equip", item: roadwardenArmor[1], chance:7}
+          ] },
+        { n:"Highway Archer", elemWeak:"Fire", hp:24, ac:14, b:5, xp:65, g:30, img:"cretures/highway archer.jpg",
+          loot:[
+            {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
+            {type:"equip", item: blackroadStriders[1], chance:7}
+          ] },
+        { n:"Cutpurse", elemWeak:"Fire", hp:26, ac:13, b:4, xp:60, g:40, img:"cretures/cutpurse.png",
+          loot:[
+            {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
+            {type:"equip", item: raidersCowl[1], chance:7}
+          ] },
+        { n:"Bandit Brawler", elemWeak:"Fire", hp:34, ac:11, b:6, xp:70, g:28, img:"cretures/bandit brawler.jpg",
+          loot:[
+            {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
+            {type:"equip", item: roadwardenArmor[2], chance:3}
+          ] },
+        { n:"Masked Raider", elemWeak:"Fire", hp:30, ac:14, b:5, xp:75, g:35, img:"cretures/masked raider.png",
+          loot:[
+            {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
+            {type:"equip", item: blackroadStriders[2], chance:3},
+            {type:"equip", item: raidersCowl[2], chance:3}
+          ] }
+    ];
+    const WEST_BOSS = {
+        n:"The Blackroad Reaver", elemWeak:"Fire", hp:120, ac:15, b:8, xp:220, g:150, img:"cretures/the blackroad reaver.jpg",
+        encounterChance:10,
+        loot:[
+            {name:"Torn Bandit Cloth", chance:100, min:2, max:4},
+            {type:"equip", item: roadwardenArmor[3], chance:25},
+            {type:"equip", item: blackroadStriders[3], chance:25},
+            {type:"equip", item: raidersCowl[3], chance:25}
+        ]
+    };
+
     const MONSTERS = [
-        { n:"Wolf", hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
+        { n:"Wolf", elemWeak:"Fire", hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
           loot:[{name:"Wolf Hide", chance:70, min:1, max:3}] },
-        { n:"Goblin", hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
+        { n:"Goblin", elemWeak:"Fire", hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
           loot:[{name:"Broken Goblin Dagger", chance:70, min:1, max:1}] },
-        { n:"Skeleton", hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
+        { n:"Skeleton", elemResist:"Poison", hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
           loot:[{name:"Goblin Bones", chance:70, min:1, max:5}] },
         // Undead theme (The Ridge, deepening past the Skeleton band)
-        { n:"Wraith", hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
+        { n:"Wraith", elemResist:"Poison", hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
           loot:[
             {name:"Wraith Essence", chance:65, min:1, max:2},
             {name:"Ember Shard", chance:10, min:1, max:1}
           ] },
-        { n:"Ghoul", hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
+        { n:"Ghoul", elemWeak:"Fire", elemResist:"Poison", hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
           loot:[{name:"Ghoul Claw", chance:65, min:1, max:3}] },
         // Water-loving theme (The Sunken Bog)
-        { n:"Bog Wretch", hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
+        { n:"Bog Wretch", elemWeak:"Fire", hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
           loot:[
             {name:"Slick Bog Scale", chance:65, min:1, max:3},
             {type:"equip", item: bogBoots[1], chance:8},
@@ -1257,21 +1359,21 @@
             {type:"equip", item: bogtideBulwark, chance:5},
             {type:"equip", item: waterloggedGreathelm, chance:5}
           ] },
-        { n:"Reed Serpent", hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
+        { n:"Reed Serpent", elemWeak:"Fire", hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
           loot:[
             {name:"Serpent Scale", chance:65, min:1, max:3},
             {type:"equip", item: reedSerpentsFang, chance:6},
             {type:"equip", item: reedScaledCuirass, chance:5}
           ] },
         // Subterranean/insectoid theme (The Old Mine)
-        { n:"Deepmine Crawler", hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
+        { n:"Deepmine Crawler", elemWeak:"Fire", hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
           loot:[
             {name:"Chitin Shard", chance:65, min:1, max:3},
             {type:"equip", item: deepmineHoods[1], chance:8},
             {type:"equip", item: deepmineHoods[2], chance:2},
             {type:"equip", item: deepmineRepeater, chance:6}
           ] },
-        { n:"Tunnel Broodling", hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
+        { n:"Tunnel Broodling", elemWeak:"Fire", elemResist:"Poison", hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
           loot:[
             {name:"Brood Silk", chance:65, min:1, max:3},
             {type:"equip", item: crawlerSilkRecurve, chance:6},
@@ -1279,14 +1381,14 @@
             {type:"equip", item: broodlingTreads, chance:5}
           ] },
         // Corrupted nature theme (The Blightwood)
-        { n:"Blightwood Stalker", hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
+        { n:"Blightwood Stalker", elemWeak:"Fire", elemResist:"Poison", hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
           loot:[
             {name:"Blighted Bark", chance:65, min:1, max:3},
             {type:"equip", item: blightRobes[1], chance:8},
             {type:"equip", item: blightRobes[2], chance:2},
             {type:"equip", item: blightstepSlippers, chance:5}
           ] },
-        { n:"Rotroot Horror", hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
+        { n:"Rotroot Horror", elemWeak:"Fire", elemResist:"Poison", hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
           loot:[
             {name:"Rotroot Sap", chance:65, min:1, max:3},
             {type:"equip", item: rotrootWandstaff, chance:6},
@@ -1297,7 +1399,7 @@
     // Ember Wisp — rare special encounter (not a normal tier monster), can appear
     // instead of a Skeleton once you're deep enough in.
     const EMBER_WISP = {
-        n:"Ember Wisp", hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
+        n:"Ember Wisp", elemResist:"Fire", hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
         zoneMin:500, zoneMax:799, encounterChance:8,
         loot:[
             {name:"Ember Shard", chance:100, min:1, max:2},
@@ -1309,25 +1411,25 @@
     // guards the legendary tier of that zone's gear line; Cinderkin guards its
     // own exclusive weapon instead of a shared set.
     const BOSSES = [
-        { n:"The Drowned King", hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
+        { n:"The Drowned King", elemWeak:"Fire", hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
           zoneMin:800, zoneMax:1199, encounterChance:8,
           loot:[
             {name:"Slick Bog Scale", chance:100, min:2, max:4},
             {type:"equip", item: bogBoots[3], chance:25}
           ] },
-        { n:"The Unlit Warden", hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
+        { n:"The Unlit Warden", elemWeak:"Fire", hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
           zoneMin:1200, zoneMax:1699, encounterChance:8,
           loot:[
             {name:"Chitin Shard", chance:100, min:2, max:4},
             {type:"equip", item: deepmineHoods[3], chance:25}
           ] },
-        { n:"The Blight Heart", hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
+        { n:"The Blight Heart", elemWeak:"Fire", elemResist:"Poison", hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
           zoneMin:1700, zoneMax:2199, encounterChance:8,
           loot:[
             {name:"Blighted Bark", chance:100, min:2, max:4},
             {type:"equip", item: blightRobes[3], chance:25}
           ] },
-        { n:"Cinderkin, the Ember's Herald", hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
+        { n:"Cinderkin, the Ember's Herald", elemResist:"Fire", hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
           zoneMin:2200, zoneMax:999999, encounterChance:6,
           loot:[
             {type:"equip", item: cinderkinsBrand, chance:20}
@@ -1337,7 +1439,13 @@
     // Rolls the encounter for the given distance: bosses and the Ember Wisp get
     // first crack (zone-gated, low chance), otherwise falls back to the normal
     // tiered monster for that distance — same as before these were added.
-    function pickEncounter(dist) {
+    function pickEncounter(x, y, dist) {
+        // West of Ashmere is an entirely separate zone (The Broken Road) — its
+        // own encounter table, never touches the east-path distance tiers at all.
+        if (x < 0) {
+            if (Math.random()*100 < WEST_BOSS.encounterChance) return WEST_BOSS;
+            return WEST_MONSTERS[Math.floor(Math.random() * WEST_MONSTERS.length)];
+        }
         for (const boss of BOSSES) {
             if (dist >= boss.zoneMin && dist <= boss.zoneMax && Math.random()*100 < boss.encounterChance) return boss;
         }
@@ -1401,6 +1509,22 @@
           turnIn:[
             "You describe what you found — wolves snapping at shadows, foam at the mouth, eyes wrong. Rowan's face darkens.",
             "\"That's not sickness. That's something calling them.\" He pays you without haggling."
+          ] },
+        { id:"q_broken_road", name:"Trouble on the Broken Road", type:"collect", target:"Torn Bandit Cloth", need:5, rewardGold:70, rewardXp:50,
+          giver:"Captain Rowan", requires:"q_wolves",
+          rewardEquipByClass:{ Fighter: roadwardenArmor[1], Archer: blackroadStriders[1], Mage: raidersCowl[1] },
+          desc:"Bandits have dug in on the old west road, robbing what few travelers still risk it. Thin their numbers and bring back proof.",
+          intro:[
+            "Rowan taps a different point on the map — west, not east. \"Different problem, same road. Bandits have dug in past the old marker stones, and they're getting bolder by the week.\"",
+            "\"Less mysterious than the rest of this, but no less urgent. Can you clear some of them out?\""
+          ],
+          choices:[
+            {text:"\"Bandits I can handle without overthinking it.\"", flag:"q_road_direct"},
+            {text:"\"Any chance this is connected to the rest?\"", flag:"q_road_curious"}
+          ],
+          turnIn:[
+            "You drop a bundle of torn, bloodstained cloth on the table. Rowan doesn't ask for details.",
+            "\"Good enough. That road matters more than it looks — keep it clear and Ashmere keeps eating.\""
           ] },
         { id:"q_hides", name:"Proof of the Hunt", type:"collect", target:"Wolf Hide", need:5, rewardGold:60, rewardXp:30,
           giver:"Tanner Mira", requires:"q_wolves",
@@ -1674,9 +1798,10 @@
 
     // ============ COMBAT ============
     function triggerCombat(dist) {
-        enemy = {...pickEncounter(dist)}; enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
+        enemy = {...pickEncounter(hero.x, hero.y, dist)}; enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
         document.getElementById('explore-ui').style.display='none'; document.getElementById('combat-ui').style.display='block';
         document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
+        document.getElementById('h-name-in-combat').innerText = hero.name;
         clearLog();
         logMsg(`<b>A ${enemy.n} appears!</b>`);
         closeCombatMenu();
@@ -1693,6 +1818,7 @@
         document.getElementById('combat-menu-main').style.display = 'block';
         document.getElementById('combat-menu-skills').style.display = 'none';
         document.getElementById('combat-menu-items').style.display = 'none';
+        document.getElementById('combat-menu-victory').style.display = 'none';
     }
 
     function renderCombatSkillsMenu() {
@@ -1971,10 +2097,16 @@
         document.getElementById('atk-btn').disabled=true;
         setTimeout(()=>{
             // Damage-over-time (Burn/Poison) ticks at the start of the enemy's turn,
-            // even if they're stunned — fire and poison don't care.
+            // even if they're stunned — fire and poison don't care. Weak/Resist
+            // modifies the tick damage (Burn maps to the Fire element).
             if (enemy.dot && enemy.dot.turns > 0) {
-                enemy.curHp -= enemy.dot.dmg;
-                logMsg(`The ${enemy.n} takes <b>${enemy.dot.dmg}</b> ${enemy.dot.type} damage.`);
+                const dotElement = enemy.dot.type === 'Burn' ? 'Fire' : enemy.dot.type;
+                let dotDmg = enemy.dot.dmg;
+                let elemTag = '';
+                if (enemy.elemWeak === dotElement) { dotDmg = Math.floor(dotDmg * 1.5); elemTag = ' — <b>WEAK!</b>'; }
+                else if (enemy.elemResist === dotElement) { dotDmg = Math.max(1, Math.floor(dotDmg * 0.5)); elemTag = ' (resisted)'; }
+                enemy.curHp -= dotDmg;
+                logMsg(`The ${enemy.n} takes <b>${dotDmg}</b> ${enemy.dot.type} damage${elemTag}.`);
                 enemy.dot.turns--;
                 if (enemy.dot.turns <= 0) enemy.dot = null;
                 updateUI();
@@ -2045,11 +2177,16 @@
         }
         if (leveledUp) logMsg(`<b>LEVEL UP! You are now level ${hero.lvl}.</b>`);
 
-        setTimeout(() => {
-            document.getElementById('combat-ui').style.display='none';
-            document.getElementById('explore-ui').style.display='block';
-            save(); updateUI();
-        }, 1400);
+        save(); updateUI();
+        document.getElementById('combat-menu-main').style.display = 'none';
+        document.getElementById('combat-menu-skills').style.display = 'none';
+        document.getElementById('combat-menu-items').style.display = 'none';
+        document.getElementById('combat-menu-victory').style.display = 'block';
+    }
+    function continueAfterVictory() {
+        document.getElementById('combat-menu-victory').style.display = 'none';
+        document.getElementById('combat-ui').style.display='none';
+        document.getElementById('explore-ui').style.display='block';
     }
     function rest() { if(hero.gold>=15){ hero.gold-=15; hero.hp=hero.con*10; hero.mana=hero.int*5; save(); updateUI(); } }
     function upgradeStat(s) { if(hero.sp>0){ hero[s]++; hero.sp--; save(); updateUI(); renderProfile(); } }
