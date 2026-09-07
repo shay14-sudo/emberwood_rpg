@@ -461,25 +461,25 @@
         {n:"Recruit's Steel", c:60, p:5, r:"common", minLvl:1, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Recruit's Steel.png"},
         {n:"Gilded Noble Blade", c:250, p:12, r:"rare", minLvl:5, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Gilded Noble Blade.png"},
         {n:"Stormweaver's Edge", c:700, p:25, r:"unique", minLvl:10, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Stormweaver's Edge.png"},
-        {n:"Sunstrider's Lionheart", c:2000, p:60, r:"legendary", minLvl:15, hands:1, wt:"sword", cls:["Fighter"], img:"items/1-hand sword/Sunstrider's Lionheart.jpg"}
+        {n:"Sunstrider's Lionheart", c:2000, p:60, r:"legendary", minLvl:15, hands:1, wt:"sword", elemBonus:25, cls:["Fighter"], img:"items/1-hand sword/Sunstrider's Lionheart.jpg"}
     ];
     const s2h = [
         {n:"Wanderer's Greatsword", c:120, p:15, r:"common", minLvl:1, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Wanderer's Greatsword.jpg"},
         {n:"Onyx Ravenblade", c:450, p:35, r:"rare", minLvl:5, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Onyx Ravenblade.jpg"},
         {n:"Voidweaver's Sorrow", c:1200, p:70, r:"unique", minLvl:10, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Voidweaver's Sorrow.jpg"},
-        {n:"Seraphim's Verdict", c:4500, p:160, r:"legendary", minLvl:15, hands:2, wt:"sword", cls:["Fighter"], img:"items/great sword/Seraphim's Verdict.jpg"}
+        {n:"Seraphim's Verdict", c:4500, p:160, r:"legendary", minLvl:15, hands:2, wt:"sword", elemBonus:25, cls:["Fighter"], img:"items/great sword/Seraphim's Verdict.jpg"}
     ];
     const bows = [
         {n:"Simple Ashwood Bow", c:100, p:14, r:"common", minLvl:1, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Simple Ashwood Bow.png"},
         {n:"Veteran's Reflex Bow", c:380, p:32, r:"rare", minLvl:5, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Veteran's Reflex Bow.png"},
         {n:"Whispering Wind-Bow", c:1000, p:65, r:"unique", minLvl:10, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Whispering Wind-Bow.png"},
-        {n:"Sunflare Apollo-Bow", c:3800, p:150, r:"legendary", minLvl:15, hands:2, wt:"bow", cls:["Archer"], img:"items/L.bow/Sunflare Apollo-Bow.png"}
+        {n:"Sunflare Apollo-Bow", c:3800, p:150, r:"legendary", minLvl:15, hands:2, wt:"bow", elemBonus:25, cls:["Archer"], img:"items/L.bow/Sunflare Apollo-Bow.png"}
     ];
     const crossbows = [
         {n:"Rusty Iron Crossbow", c:55, p:6, r:"common", minLvl:1, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Rusty Iron Crossbow.jpg"},
         {n:"Gilded Marksman's Arbalest", c:230, p:14, r:"rare", minLvl:5, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Gilded Marksman's Arbalest.jpg"},
         {n:"Arcane Bolt-Launcher", c:680, p:28, r:"unique", minLvl:10, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Arcane Bolt-Launcher.jpg"},
-        {n:"Heavenly Sky-Piercer", c:2600, p:68, r:"legendary", minLvl:15, hands:1, wt:"crossbow", cls:["Archer"], img:"items/C.bow/Heavenly Sky-Piercer.jpg"}
+        {n:"Heavenly Sky-Piercer", c:2600, p:68, r:"legendary", minLvl:15, hands:1, wt:"crossbow", elemBonus:25, cls:["Archer"], img:"items/C.bow/Heavenly Sky-Piercer.jpg"}
     ];
     const shields = [
         { n: "Battered Buckler", c: 40, d: 3, r: "common", minLvl:1, isShield:true, cls:["Fighter"], img: "items/shild/Battered Recruit's Buckler.png" },
@@ -747,35 +747,58 @@
     const RARITY_PROC = { common:0, rare:8, unique:15, legendary:25 };
     const RARITY_PROC_LVL = { common:0, rare:1, unique:2, legendary:3 };
 
+    // Percentage resistance lookup (Diablo-style): positive = resists that much
+    // less damage/effect, negative = weak (takes that much more). 0 if untagged.
+    function getElemRes(entity, element) {
+        return (entity && entity.elemRes && entity.elemRes[element]) || 0;
+    }
+
     // Rolled after any successful physical hit (not spells — those already have
     // their own elemental identity). Sword = Burn, Bow/Crossbow = Poison, Staff = Shock.
+    // A weapon's own elemBonus (%), if it has one, boosts Fire/Poison tick damage.
     function applyWeaponElemental() {
         const wpn = hero.eq.wpn;
         if (!wpn) return;
         const chance = RARITY_PROC[wpn.r] || 0;
         if (!chance || Math.random()*100 >= chance) return;
         const lvl = RARITY_PROC_LVL[wpn.r] || 0;
+        const bonus = wpn.elemBonus || 0;
         if (wpn.wt === 'sword') {
-            enemy.dot = { type:'Burn', dmg: 4 + lvl*3, turns: 3 };
+            const dmg = Math.round((4 + lvl*3) * (1 + bonus/100));
+            enemy.dot = { type:'Burn', dmg, turns: 3 };
             logMsg(`The ${enemy.n} catches <b>fire</b>!`);
         } else if (wpn.wt === 'bow' || wpn.wt === 'crossbow') {
-            enemy.dot = { type:'Poison', dmg: 3 + lvl*2, turns: 4 };
+            const dmg = Math.round((3 + lvl*2) * (1 + bonus/100));
+            enemy.dot = { type:'Poison', dmg, turns: 4 };
             logMsg(`The ${enemy.n} is <b>poisoned</b>!`);
         } else if (wpn.wt === 'staff') {
-            enemy.stunned = true;
-            logMsg(`A jolt of <b>lightning</b> arcs through the ${enemy.n} — stunned!`);
+            // Lightning resistance is a chance to shrug the stun off entirely,
+            // rather than reduced damage — there's no direct damage to reduce.
+            const res = getElemRes(enemy, 'Lightning');
+            if (res > 0 && Math.random()*100 < res) {
+                logMsg(`The ${enemy.n} resists the shock!`);
+            } else {
+                enemy.stunned = true;
+                logMsg(`A jolt of <b>lightning</b> arcs through the ${enemy.n} — stunned!${res<0?` <b>(WEAK!)</b>`:''}`);
+            }
         }
     }
 
     // Rolled when the enemy successfully lands a hit — a rare+ shield has a
-    // chance to chill the attacker in response (Ice).
+    // chance to chill the attacker in response (Ice). Same resist-to-shrug-off
+    // logic as Lightning above, since Chill has no direct damage either.
     function applyShieldElemental() {
         const shd = hero.eq.shd;
         if (!shd) return;
         const chance = RARITY_PROC[shd.r] || 0;
         if (!chance || Math.random()*100 >= chance) return;
-        enemy.chilled = true;
-        logMsg(`Your shield flares with <b>frost</b> — the ${enemy.n} is chilled!`);
+        const res = getElemRes(enemy, 'Ice');
+        if (res > 0 && Math.random()*100 < res) {
+            logMsg(`Your shield flares with <b>frost</b>, but the ${enemy.n} shrugs it off.`);
+        } else {
+            enemy.chilled = true;
+            logMsg(`Your shield flares with <b>frost</b> — the ${enemy.n} is chilled!${res<0?` <b>(WEAK!)</b>`:''}`);
+        }
     }
 
     function renderProfile() {
@@ -853,8 +876,9 @@
     function elementalTag(item) {
         if (!item.r || item.r === 'common') return '';
         const chance = RARITY_PROC[item.r] || 0;
-        if (item.wt === 'sword') return `${chance}% chance to Burn (Fire)`;
-        if (item.wt === 'bow' || item.wt === 'crossbow') return `${chance}% chance to Poison`;
+        const bonusTag = item.elemBonus ? ` <span style="color:#6de3b0;">(+${item.elemBonus}% dmg)</span>` : '';
+        if (item.wt === 'sword') return `${chance}% chance to Burn (Fire)${bonusTag}`;
+        if (item.wt === 'bow' || item.wt === 'crossbow') return `${chance}% chance to Poison${bonusTag}`;
         if (item.wt === 'staff') return `${chance}% chance to Shock (stun)`;
         if (item.slot === 'shd' || item.isShield) return `${chance}% chance to Chill attacker (Ice)`;
         return '';
@@ -863,6 +887,19 @@
     // Full elemental breakdown for the character sheet — every source, equipment
     // or skill, that gives the hero an elemental effect, each labelled with
     // exactly where it comes from (not just a single summarized line).
+    // A small always-show-all-4 percentage grid, Diablo-style: positive =
+    // resist (green), negative = weak (red), 0 = neutral (grey).
+    function elemResTableHtml(elemRes) {
+        const elems = ['Fire','Poison','Lightning','Ice'];
+        const cells = elems.map(e => {
+            const v = (elemRes && elemRes[e]) || 0;
+            const color = v > 0 ? '#6de3b0' : (v < 0 ? '#ff8b93' : '#8899aa');
+            const sign = v > 0 ? '+' : '';
+            return `<div style="text-align:center;"><small style="opacity:.6;">${e}</small><br><b style="color:${color};">${sign}${v}%</b></div>`;
+        });
+        return `<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:4px;">${cells.join('')}</div>`;
+    }
+
     function renderElementalPanel() {
         const el = document.getElementById('m-elemental');
         if (!el) return;
@@ -870,7 +907,7 @@
 
         if (hero.eq.wpn) {
             const tag = elementalTag(hero.eq.wpn);
-            if (tag) rows.push(`<b>${hero.eq.wpn.n}</b> <small style="opacity:.6;">(weapon)</small> — ${tag}`);
+            if (tag) rows.push(`<b>${hero.eq.wpn.n}</b> <small style="opacity:.6;">(weapon)</small> — ${tag}${hero.eq.wpn.elemBonus ? ` <small style="color:#6de3b0;">(+${hero.eq.wpn.elemBonus}% dmg)</small>` : ''}`);
         }
         if (hero.eq.shd) {
             const tag = elementalTag(hero.eq.shd);
@@ -890,13 +927,11 @@
         let html = `<b>ELEMENTAL</b><br>`;
         html += rows.length ? rows.join('<br>') : `<small style="opacity:.6;">No elemental sources yet — equip a rare+ weapon/shield, or learn an elemental spell.</small>`;
 
-        // If we're mid-fight, also surface the current enemy's known weakness/resistance —
-        // this is the one piece of "elemental" info that's about the enemy, not the hero.
+        // If we're mid-fight, also surface the current enemy's full resistance
+        // table (all 4 elements, percentages) — this is the one piece of
+        // "elemental" info that's about the enemy, not the hero.
         if (enemy && enemy.n && document.getElementById('combat-ui').style.display === 'block') {
-            const enemyLines = [];
-            if (enemy.elemWeak) enemyLines.push(`Weak to <b>${enemy.elemWeak}</b>`);
-            if (enemy.elemResist) enemyLines.push(`Resists <b>${enemy.elemResist}</b>`);
-            if (enemyLines.length) html += `<hr><b>${enemy.n}</b><br><small style="color:#f7a84e;">${enemyLines.join(' | ')}</small>`;
+            html += `<hr><b>${enemy.n}'s Resistances</b>` + elemResTableHtml(enemy.elemRes);
         }
 
         el.innerHTML = html;
@@ -1336,27 +1371,27 @@
     // Ashmere (x<0), a different direction from the main road entirely, so it
     // never competes with the Goblin encounter for the same distance band.
     const WEST_MONSTERS = [
-        { n:"Road Thug", elemWeak:"Fire", hp:28, ac:12, b:4, xp:55, g:26, img:"cretures/road thug.png",
+        { n:"Road Thug", elemRes:{Fire:-50}, hp:28, ac:12, b:4, xp:55, g:26, img:"cretures/road thug.png",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: roadwardenArmor[1], chance:7}
           ] },
-        { n:"Highway Archer", elemWeak:"Fire", hp:24, ac:14, b:5, xp:65, g:30, img:"cretures/highway archer.jpg",
+        { n:"Highway Archer", elemRes:{Fire:-50}, hp:24, ac:14, b:5, xp:65, g:30, img:"cretures/highway archer.jpg",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: blackroadStriders[1], chance:7}
           ] },
-        { n:"Cutpurse", elemWeak:"Fire", hp:26, ac:13, b:4, xp:60, g:40, img:"cretures/cutpurse.png",
+        { n:"Cutpurse", elemRes:{Fire:-50}, hp:26, ac:13, b:4, xp:60, g:40, img:"cretures/cutpurse.png",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: raidersCowl[1], chance:7}
           ] },
-        { n:"Bandit Brawler", elemWeak:"Fire", hp:34, ac:11, b:6, xp:70, g:28, img:"cretures/bandit brawler.jpg",
+        { n:"Bandit Brawler", elemRes:{Fire:-50}, hp:34, ac:11, b:6, xp:70, g:28, img:"cretures/bandit brawler.jpg",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: roadwardenArmor[2], chance:3}
           ] },
-        { n:"Masked Raider", elemWeak:"Fire", hp:30, ac:14, b:5, xp:75, g:35, img:"cretures/masked raider.png",
+        { n:"Masked Raider", elemRes:{Fire:-50}, hp:30, ac:14, b:5, xp:75, g:35, img:"cretures/masked raider.png",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: blackroadStriders[2], chance:3},
@@ -1364,7 +1399,7 @@
           ] }
     ];
     const WEST_BOSS = {
-        n:"The Blackroad Reaver", elemWeak:"Fire", hp:120, ac:15, b:8, xp:220, g:150, img:"cretures/the blackroad reaver.jpg",
+        n:"The Blackroad Reaver", elemRes:{Fire:-50}, hp:120, ac:15, b:8, xp:220, g:150, img:"cretures/the blackroad reaver.jpg",
         encounterChance:10,
         loot:[
             {name:"Torn Bandit Cloth", chance:100, min:2, max:4},
@@ -1375,22 +1410,22 @@
     };
 
     const MONSTERS = [
-        { n:"Wolf", elemWeak:"Fire", hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
+        { n:"Wolf", elemRes:{Fire:-50}, hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
           loot:[{name:"Wolf Hide", chance:70, min:1, max:3}] },
-        { n:"Goblin", elemWeak:"Fire", hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
+        { n:"Goblin", elemRes:{Fire:-50}, hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
           loot:[{name:"Broken Goblin Dagger", chance:70, min:1, max:1}] },
-        { n:"Skeleton", elemResist:"Poison", hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
+        { n:"Skeleton", elemRes:{Poison:50}, hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
           loot:[{name:"Goblin Bones", chance:70, min:1, max:5}] },
         // Undead theme (The Ridge, deepening past the Skeleton band)
-        { n:"Wraith", elemResist:"Poison", hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
+        { n:"Wraith", elemRes:{Poison:50}, hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
           loot:[
             {name:"Wraith Essence", chance:65, min:1, max:2},
             {name:"Ember Shard", chance:10, min:1, max:1}
           ] },
-        { n:"Ghoul", elemWeak:"Fire", elemResist:"Poison", hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
+        { n:"Ghoul", elemRes:{Fire:-50, Poison:50}, hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
           loot:[{name:"Ghoul Claw", chance:65, min:1, max:3}] },
         // Water-loving theme (The Sunken Bog)
-        { n:"Bog Wretch", elemWeak:"Fire", hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
+        { n:"Bog Wretch", elemRes:{Fire:-50}, hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
           loot:[
             {name:"Slick Bog Scale", chance:65, min:1, max:3},
             {type:"equip", item: bogBoots[1], chance:8},
@@ -1399,21 +1434,21 @@
             {type:"equip", item: bogtideBulwark, chance:5},
             {type:"equip", item: waterloggedGreathelm, chance:5}
           ] },
-        { n:"Reed Serpent", elemWeak:"Fire", hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
+        { n:"Reed Serpent", elemRes:{Fire:-50}, hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
           loot:[
             {name:"Serpent Scale", chance:65, min:1, max:3},
             {type:"equip", item: reedSerpentsFang, chance:6},
             {type:"equip", item: reedScaledCuirass, chance:5}
           ] },
         // Subterranean/insectoid theme (The Old Mine)
-        { n:"Deepmine Crawler", elemWeak:"Fire", hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
+        { n:"Deepmine Crawler", elemRes:{Fire:-50}, hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
           loot:[
             {name:"Chitin Shard", chance:65, min:1, max:3},
             {type:"equip", item: deepmineHoods[1], chance:8},
             {type:"equip", item: deepmineHoods[2], chance:2},
             {type:"equip", item: deepmineRepeater, chance:6}
           ] },
-        { n:"Tunnel Broodling", elemWeak:"Fire", elemResist:"Poison", hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
+        { n:"Tunnel Broodling", elemRes:{Fire:-50, Poison:50}, hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
           loot:[
             {name:"Brood Silk", chance:65, min:1, max:3},
             {type:"equip", item: crawlerSilkRecurve, chance:6},
@@ -1421,14 +1456,14 @@
             {type:"equip", item: broodlingTreads, chance:5}
           ] },
         // Corrupted nature theme (The Blightwood)
-        { n:"Blightwood Stalker", elemWeak:"Fire", elemResist:"Poison", hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
+        { n:"Blightwood Stalker", elemRes:{Fire:-50, Poison:50}, hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
           loot:[
             {name:"Blighted Bark", chance:65, min:1, max:3},
             {type:"equip", item: blightRobes[1], chance:8},
             {type:"equip", item: blightRobes[2], chance:2},
             {type:"equip", item: blightstepSlippers, chance:5}
           ] },
-        { n:"Rotroot Horror", elemWeak:"Fire", elemResist:"Poison", hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
+        { n:"Rotroot Horror", elemRes:{Fire:-50, Poison:50}, hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
           loot:[
             {name:"Rotroot Sap", chance:65, min:1, max:3},
             {type:"equip", item: rotrootWandstaff, chance:6},
@@ -1439,7 +1474,7 @@
     // Ember Wisp — rare special encounter (not a normal tier monster), can appear
     // instead of a Skeleton once you're deep enough in.
     const EMBER_WISP = {
-        n:"Ember Wisp", elemResist:"Fire", hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
+        n:"Ember Wisp", elemRes:{Fire:75}, hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
         zoneMin:500, zoneMax:799, encounterChance:8,
         loot:[
             {name:"Ember Shard", chance:100, min:1, max:2},
@@ -1451,25 +1486,25 @@
     // guards the legendary tier of that zone's gear line; Cinderkin guards its
     // own exclusive weapon instead of a shared set.
     const BOSSES = [
-        { n:"The Drowned King", elemWeak:"Fire", hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
+        { n:"The Drowned King", elemRes:{Fire:-50}, hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
           zoneMin:800, zoneMax:1199, encounterChance:8,
           loot:[
             {name:"Slick Bog Scale", chance:100, min:2, max:4},
             {type:"equip", item: bogBoots[3], chance:25}
           ] },
-        { n:"The Unlit Warden", elemWeak:"Fire", hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
+        { n:"The Unlit Warden", elemRes:{Fire:-50}, hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
           zoneMin:1200, zoneMax:1699, encounterChance:8,
           loot:[
             {name:"Chitin Shard", chance:100, min:2, max:4},
             {type:"equip", item: deepmineHoods[3], chance:25}
           ] },
-        { n:"The Blight Heart", elemWeak:"Fire", elemResist:"Poison", hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
+        { n:"The Blight Heart", elemRes:{Fire:-50, Poison:50}, hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
           zoneMin:1700, zoneMax:2199, encounterChance:8,
           loot:[
             {name:"Blighted Bark", chance:100, min:2, max:4},
             {type:"equip", item: blightRobes[3], chance:25}
           ] },
-        { n:"Cinderkin, the Ember's Herald", elemResist:"Fire", hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
+        { n:"Cinderkin, the Ember's Herald", elemRes:{Fire:75}, hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
           zoneMin:2200, zoneMax:999999, encounterChance:6,
           loot:[
             {type:"equip", item: cinderkinsBrand, chance:20}
@@ -1937,6 +1972,7 @@
     }
 
     function attemptFlee() {
+        if (!enemy || enemy.curHp <= 0) return;
         const chance = 50 + Math.floor((hero.dex-1)/2)*5;
         if (Math.random()*100 < chance) {
             logMsg(`You break away and flee from the ${enemy.n}!`);
@@ -1951,6 +1987,7 @@
     }
 
     function useSkill(name, bonus, manaCost) {
+        if (!enemy || enemy.curHp <= 0) return;
         manaCost = manaCost || 0;
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
         hero.mana -= manaCost;
@@ -1972,6 +2009,7 @@
     }
 
     function useDoubleShot() {
+        if (!enemy || enemy.curHp <= 0) return;
         const manaCost = 6;
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
         hero.mana -= manaCost;
@@ -1998,6 +2036,7 @@
     // Generic spell caster used by all Mage abilities: handles the mana cost,
     // to-hit roll, and optional side effects (crit, chill, stun, lifesteal).
     function castSpell(name, manaCost, dmgFn, opts) {
+        if (!enemy || enemy.curHp <= 0) return;
         opts = opts || {};
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
         hero.mana -= manaCost;
@@ -2028,6 +2067,7 @@
 
     // ---- Fighter build-specific actives ----
     function useShieldSlam() {
+        if (!enemy || enemy.curHp <= 0) return;
         if (!(hero.eq.wpn && hero.eq.wpn.hands===1 && hero.eq.shd)) { alert("Requires a one-handed weapon and a shield equipped."); return; }
         const manaCost = 6;
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
@@ -2052,6 +2092,7 @@
         updateUI();
     }
     function useCleavingStrike() {
+        if (!enemy || enemy.curHp <= 0) return;
         if (!(hero.eq.wpn && hero.eq.wpn.hands===2)) { alert("Requires a two-handed weapon equipped."); return; }
         const manaCost = 8;
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
@@ -2076,6 +2117,7 @@
 
     // ---- Archer build-specific actives ----
     function usePiercingShot() {
+        if (!enemy || enemy.curHp <= 0) return;
         if (!(hero.eq.wpn && hero.eq.wpn.wt==='bow')) { alert("Requires a bow equipped."); return; }
         const manaCost = 6;
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
@@ -2094,6 +2136,7 @@
         updateUI();
     }
     function useRapidReload() {
+        if (!enemy || enemy.curHp <= 0) return;
         if (!(hero.eq.wpn && hero.eq.wpn.wt==='crossbow')) { alert("Requires a crossbow equipped."); return; }
         const manaCost = 6;
         if (hero.mana < manaCost) { alert("Not enough mana!"); return; }
@@ -2118,6 +2161,7 @@
     }
 
     function attack() {
+        if (!enemy || enemy.curHp <= 0) return;
         const cs = calcCombatStats();
         let r=Math.floor(Math.random()*20)+1+Math.floor((hero.dex-1)/2)+cs.toHitBonus;
         if(r>=enemy.ac) {
@@ -2138,14 +2182,16 @@
         document.getElementById('atk-btn').disabled=true;
         setTimeout(()=>{
             // Damage-over-time (Burn/Poison) ticks at the start of the enemy's turn,
-            // even if they're stunned — fire and poison don't care. Weak/Resist
-            // modifies the tick damage (Burn maps to the Fire element).
+            // even if they're stunned — fire and poison don't care. Resistance is a
+            // percentage (Diablo-style): positive reduces damage, negative (weakness)
+            // increases it. Burn maps to the Fire element for this lookup.
             if (enemy.dot && enemy.dot.turns > 0) {
                 const dotElement = enemy.dot.type === 'Burn' ? 'Fire' : enemy.dot.type;
-                let dotDmg = enemy.dot.dmg;
+                const res = getElemRes(enemy, dotElement);
+                let dotDmg = Math.max(1, Math.round(enemy.dot.dmg * (1 - res/100)));
                 let elemTag = '';
-                if (enemy.elemWeak === dotElement) { dotDmg = Math.floor(dotDmg * 1.5); elemTag = ' — <b>WEAK!</b>'; }
-                else if (enemy.elemResist === dotElement) { dotDmg = Math.max(1, Math.floor(dotDmg * 0.5)); elemTag = ' (resisted)'; }
+                if (res < 0) elemTag = ` — <b>WEAK! (${Math.abs(res)}%)</b>`;
+                else if (res > 0) elemTag = ` (${res}% resisted)`;
                 enemy.curHp -= dotDmg;
                 logMsg(`The ${enemy.n} takes <b>${dotDmg}</b> ${enemy.dot.type} damage${elemTag}.`);
                 enemy.dot.turns--;
