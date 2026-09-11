@@ -307,6 +307,7 @@
                     <img id="c-e-img" class="portrait-frame" style="border-color:#8b2f3a;">
                     <div class="bar" style="margin-top:6px;"><div id="e-hp-f" class="hp-fill"></div></div>
                     <small id="e-name"></small>
+                    <div id="e-elem-table" style="margin-top:6px;"></div>
                 </div>
             </div>
 
@@ -950,13 +951,6 @@
         let html = `<b>ELEMENTAL</b><br>`;
         html += rows.length ? rows.join('<br>') : `<small style="opacity:.6;">No elemental sources yet — equip a rare+ weapon/shield, or learn an elemental spell.</small>`;
 
-        // If we're mid-fight, also surface the current enemy's full resistance
-        // table (all 4 elements, percentages) — this is the one piece of
-        // "elemental" info that's about the enemy, not the hero.
-        if (enemy && enemy.n && document.getElementById('combat-ui').style.display === 'block') {
-            html += `<hr><b>${enemy.n}'s Resistances</b>` + elemResTableHtml(enemy.elemRes);
-        }
-
         el.innerHTML = html;
     }
 
@@ -1559,6 +1553,7 @@
         enemy = { ...(isBossRoom ? DUNGEON_BOSS : DUNGEON_MONSTERS[(dungeonDepth-1) % DUNGEON_MONSTERS.length]) };
         enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
         document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
+        document.getElementById('e-elem-table').innerHTML = elemResTableHtml(enemy.elemRes);
         document.getElementById('h-name-in-combat').innerText = hero.name;
         showScreen('forest-screen');
         document.getElementById('explore-ui').style.display = 'none';
@@ -2063,6 +2058,7 @@
         enemy = {...pickEncounter(hero.x, hero.y, dist)}; enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
         document.getElementById('explore-ui').style.display='none'; document.getElementById('combat-ui').style.display='block';
         document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
+        document.getElementById('e-elem-table').innerHTML = elemResTableHtml(enemy.elemRes);
         document.getElementById('h-name-in-combat').innerText = hero.name;
         clearLog();
         logMsg(`<b>A ${enemy.n} appears!</b>`);
@@ -2195,8 +2191,7 @@
         } else {
             logMsg(`You use ${name} and miss!`);
         }
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
 
@@ -2220,8 +2215,7 @@
         if (hits > 0) applyWeaponElemental();
         if (hits === 0) logMsg(`You fire Double Shot — both arrows miss!`);
         else logMsg(`You fire Double Shot — ${hits}/2 arrows hit for <b>${totalDmg}</b> total damage.`);
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
 
@@ -2247,8 +2241,7 @@
         } else {
             logMsg(`You cast ${name} and it fizzles — miss!`);
         }
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
     function castFireball() { const lvl=hero.skills['Fireball']||0; castSpell('Fireball', 10, cs=>Math.floor(Math.random()*6)+cs.matk+lvl*8); }
@@ -2279,8 +2272,7 @@
         } else {
             logMsg(`You attempt a Shield Slam and miss!`);
         }
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
     function useCleavingStrike() {
@@ -2302,8 +2294,7 @@
         } else {
             logMsg(`You swing a Cleaving Strike and miss!`);
         }
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
 
@@ -2323,8 +2314,7 @@
         enemy.curHp -= dmg;
         applyWeaponElemental();
         logMsg(`You loose a Piercing Shot, striking true for <b>${dmg}</b> damage${isCrit?' — <b>CRITICAL!</b>':''}.`);
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
     function useRapidReload() {
@@ -2347,8 +2337,7 @@
         } else {
             logMsg(`You fire a hasty bolt and miss!`);
         }
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
 
@@ -2366,8 +2355,7 @@
         } else {
             logMsg(`You attack and miss!`);
         }
-        if(enemy.curHp<=0) win(); else enemyTurn();
-        closeCombatMenu();
+        if(enemy.curHp<=0) { win(); } else { enemyTurn(); closeCombatMenu(); }
         updateUI();
     }
     function enemyTurn() {
