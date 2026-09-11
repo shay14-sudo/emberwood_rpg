@@ -244,6 +244,10 @@
     <!-- Notice Board (Quests) -->
     <div id="quest-screen" class="screen"><div class="overlay"><div class="panel" style="max-width:560px;">
         <h3 style="margin-top:0;">Ashmere Notice Board</h3>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button id="qtab-available" onclick="switchQuestTab('available')" style="flex:1;">AVAILABLE</button>
+            <button id="qtab-completed" onclick="switchQuestTab('completed')" style="flex:1;">COMPLETED</button>
+        </div>
         <div id="quest-list" style="max-height:420px; overflow-y:auto; text-align:left;"></div>
         <br><button onclick="showScreen('town-screen')">BACK</button>
     </div></div></div>
@@ -260,6 +264,25 @@
         <h3 style="margin-top:0;">Emberwood — Known Lands</h3>
         <div id="map-container" style="display:flex; justify-content:center;"></div>
         <br><button onclick="showScreen('forest-screen')">BACK</button>
+    </div></div></div>
+
+    <!-- Goblin Warren dungeon -->
+    <div id="dungeon-entrance-screen" class="screen"><div class="overlay"><div class="panel" style="max-width:500px;">
+        <h3 style="margin-top:0; color:#e2572a;">The Goblin Warren</h3>
+        <p style="font-size:13px; opacity:.85; text-align:left;">
+            The tunnels beneath Hollow's Edge run deeper than anyone from Ashmere has dared find out.
+            Goblin voices echo up from the dark — and something bigger moves down there with them.
+        </p>
+        <button onclick="startDungeon()" style="background:#8b2f3a; color:#fff;">ENTER THE WARREN</button>
+        <br><button onclick="showScreen('forest-screen')">BACK</button>
+    </div></div></div>
+
+    <div id="dungeon-map-screen" class="screen"><div class="overlay"><div class="panel" style="max-width:560px;">
+        <h3 style="margin-top:0; color:#e2572a;">The Goblin Warren</h3>
+        <div id="dungeon-map-container" style="display:flex; justify-content:center; margin-bottom:14px;"></div>
+        <div id="dungeon-status" style="font-size:12px; opacity:.8; margin-bottom:10px;"></div>
+        <button id="delve-btn" onclick="delveDeeper()">DELVE DEEPER</button>
+        <button onclick="leaveDungeon()">LEAVE THE WARREN</button>
     </div></div></div>
 
     <div id="forest-screen" class="screen"><div class="overlay">
@@ -608,7 +631,7 @@
         document.getElementById(id).style.display='block';
         document.getElementById('global-header').style.display = (id==='intro-screen'||id==='setup-screen'||id==='story-screen'||id==='auth-screen') ? 'none' : 'flex';
         if(id==='market-screen') renderShop();
-        if(id==='quest-screen') renderQuestBoard();
+        if(id==='quest-screen') switchQuestTab('available');
         if(id==='map-screen') renderMap();
     }
 
@@ -1030,6 +1053,7 @@
         hats.forEach((hd,i) => h += itemCard(hd, `<div class="item-stat def">+${hd.d} DEF</div>`, `buyHelm(hats[${i}])`));
         h += itemCard(deepmineHoods[0], `<div class="item-stat def">+${deepmineHoods[0].d} DEF</div>`, `buyHelm(deepmineHoods[0])`);
         h += itemCard(raidersCowl[0], `<div class="item-stat def">+${raidersCowl[0].d} DEF</div>`, `buyHelm(raidersCowl[0])`);
+        h += itemCard(warlordsWarhelm[0], `<div class="item-stat def">+${warlordsWarhelm[0].d} DEF</div>`, `buyHelm(warlordsWarhelm[0])`);
         h += `</div>`;
 
         // ---- Body (every body-armor line, merged by slot) ----
@@ -1039,6 +1063,7 @@
         robes.forEach((a,i) => h += itemCard(a, `<div class="item-stat def">+${a.d} DEF</div>`, `buyArmor(robes[${i}])`));
         h += itemCard(blightRobes[0], `<div class="item-stat def">+${blightRobes[0].d} DEF</div>`, `buyArmor(blightRobes[0])`);
         h += itemCard(roadwardenArmor[0], `<div class="item-stat def">+${roadwardenArmor[0].d} DEF</div>`, `buyArmor(roadwardenArmor[0])`);
+        h += itemCard(goblinHideJerkin[0], `<div class="item-stat def">+${goblinHideJerkin[0].d} DEF</div>`, `buyArmor(goblinHideJerkin[0])`);
         h += `</div>`;
 
         // ---- Boots (every boots line, merged by slot) ----
@@ -1048,6 +1073,7 @@
         mageBoots.forEach((b,i) => h += itemCard(b, `<div class="item-stat def">+${b.d} DEF</div>`, `buyBoots(mageBoots[${i}])`));
         h += itemCard(bogBoots[0], `<div class="item-stat def">+${bogBoots[0].d} DEF</div>`, `buyBoots(bogBoots[0])`);
         h += itemCard(blackroadStriders[0], `<div class="item-stat def">+${blackroadStriders[0].d} DEF</div>`, `buyBoots(blackroadStriders[0])`);
+        h += itemCard(shamansTreads[0], `<div class="item-stat def">+${shamansTreads[0].d} DEF</div>`, `buyBoots(shamansTreads[0])`);
         h += `</div>`;
 
         document.getElementById('shop-container').innerHTML = h;
@@ -1184,6 +1210,7 @@
         { name:"The Broken Road", x:-6, y:0, icon:"bandit" },
         { name:"Wolf's Run", x:2, y:0, icon:"wolf" },
         { name:"Hollow's Edge", x:4, y:2, icon:"goblin" },
+        { name:"The Goblin Warren", x:5, y:0, icon:"dungeon" },
         { name:"The Ridge", x:7, y:5, icon:"ridge" },
         { name:"The Sunken Bog", x:12, y:4, icon:"bog" },
         { name:"The Old Mine", x:16, y:8, icon:"mine" },
@@ -1211,6 +1238,11 @@
         if (type === 'town') {
             return `<rect x="${x-13}" y="${y-6}" width="26" height="19" fill="#8a5a2b" stroke="#f2c94c" stroke-width="1.5"/>` +
                    `<polygon points="${x-16},${y-6} ${x},${y-22} ${x+16},${y-6}" fill="#5a3a1a" stroke="#f2c94c" stroke-width="1.5"/>`;
+        }
+        if (type === 'dungeon') {
+            return `<polygon points="${x-14},${y+12} ${x-14},${y-2} ${x},${y-16} ${x+14},${y-2} ${x+14},${y+12}" fill="#1a1410" stroke="#8b2f3a" stroke-width="1.5"/>` +
+                   `<ellipse cx="${x}" cy="${y+7}" rx="7" ry="9" fill="#050403"/>` +
+                   `<circle cx="${x-3}" cy="${y+4}" r="1.8" fill="#e2572a"/><circle cx="${x+3}" cy="${y+4}" r="1.8" fill="#e2572a"/>`;
         }
         if (type === 'bandit') {
             return `<circle cx="${x}" cy="${y-4}" r="9" fill="#3a3228" stroke="#8b7355" stroke-width="1.5"/>` +
@@ -1288,6 +1320,13 @@
     function travelToPOI(name) {
         const poi = POIS.find(p => p.name === name);
         if (!poi) return;
+        if (poi.name === "The Goblin Warren") {
+            if (!confirm(`Travel to ${poi.name}?`)) return;
+            hero.x = poi.x; hero.y = poi.y;
+            save();
+            showScreen('dungeon-entrance-screen');
+            return;
+        }
         if (poi.x === hero.x && poi.y === hero.y) { alert(`You're already at ${poi.name}.`); return; }
         if (!confirm(`Travel to ${poi.name}?`)) return;
         hero.x = poi.x; hero.y = poi.y;
@@ -1408,6 +1447,126 @@
             {type:"equip", item: raidersCowl[3], chance:25}
         ]
     };
+
+    // ============ THE GOBLIN WARREN (dungeon, entrance near Hollow's Edge) ============
+    // A self-contained dungeon: enter, delve room by room through 4 fixed
+    // encounters, then a boss at the end with a deliberately generous
+    // Unique-or-above drop chance — this is meant to be worth returning to.
+    const warlordsWarhelm = [
+        { n:"Scavenged Goblin Helm", c:60, d:3, r:"common", minLvl:1, buyable:true, slot:"head", cls:["Fighter"], img:"items/helm/scavenged-goblin-helm.jpg" },
+        { n:"Warren Raider's Helm", c:240, d:6, r:"rare", minLvl:3, buyable:false, slot:"head", cls:["Fighter"], img:"items/helm/warren-raiders-helm.jpg" },
+        { n:"Hobgoblin Champion's Helm", c:650, d:12, r:"unique", minLvl:6, buyable:false, slot:"head", cls:["Fighter"], img:"items/helm/hobgoblin-champions-helm.jpg" },
+        { n:"Grosh's Warcrown", c:2400, d:22, r:"legendary", minLvl:10, buyable:false, slot:"head", cls:["Fighter"], img:"items/helm/groshs-warcrown.jpg" }
+    ];
+    const goblinHideJerkin = [
+        { n:"Goblin-Hide Jerkin", c:60, d:3, r:"common", minLvl:1, buyable:true, slot:"body", cls:["Archer"], img:"items/m.armor/goblin-hide-jerkin.jpg" },
+        { n:"Warren Scout's Vest", c:240, d:6, r:"rare", minLvl:3, buyable:false, slot:"body", cls:["Archer"], img:"items/m.armor/warren-scouts-vest.jpg" },
+        { n:"Shaman-Blessed Hide", c:650, d:12, r:"unique", minLvl:6, buyable:false, slot:"body", cls:["Archer"], img:"items/m.armor/shaman-blessed-hide.jpg" },
+        { n:"Grosh's Trophy Hide", c:2400, d:22, r:"legendary", minLvl:10, buyable:false, slot:"body", cls:["Archer"], img:"items/m.armor/groshs-trophy-hide.jpg" }
+    ];
+    const shamansTreads = [
+        { n:"Worn Warren Treads", c:60, d:3, r:"common", minLvl:1, buyable:true, slot:"boots", cls:["Mage"], img:"items/shoes/worn-warren-treads.jpg" },
+        { n:"Shaman's Ashen Treads", c:240, d:6, r:"rare", minLvl:3, buyable:false, slot:"boots", cls:["Mage"], img:"items/shoes/shamans-ashen-treads.jpg" },
+        { n:"Hex-Marked Striders", c:650, d:12, r:"unique", minLvl:6, buyable:false, slot:"boots", cls:["Mage"], img:"items/shoes/hex-marked-striders.jpg" },
+        { n:"Grosh's Bonewalkers", c:2400, d:22, r:"legendary", minLvl:10, buyable:false, slot:"boots", cls:["Mage"], img:"items/shoes/groshs-bonewalkers.jpg" }
+    ];
+
+    const DUNGEON_MONSTERS = [
+        { n:"Goblin Scavenger", elemRes:{Fire:-50}, hp:32, ac:12, b:5, xp:65, g:32, img:"cretures/goblin scavenger.jpg",
+          loot:[
+            {name:"Warren Scrap", chance:65, min:1, max:3},
+            {type:"equip", item: warlordsWarhelm[1], chance:8}
+          ] },
+        { n:"Goblin Shaman", elemRes:{Fire:-50}, hp:26, ac:13, b:6, xp:70, g:34, img:"cretures/goblin shaman.jpg",
+          loot:[
+            {name:"Warren Scrap", chance:65, min:1, max:3},
+            {type:"equip", item: shamansTreads[1], chance:8}
+          ] },
+        { n:"Goblin Berserker", elemRes:{Fire:-50}, hp:38, ac:11, b:7, xp:75, g:30, img:"cretures/goblin berserker.jpg",
+          loot:[
+            {name:"Warren Scrap", chance:65, min:1, max:3},
+            {type:"equip", item: goblinHideJerkin[1], chance:8}
+          ] },
+        { n:"Hobgoblin Guard", elemRes:{Fire:-50}, hp:55, ac:14, b:8, xp:110, g:50, img:"cretures/hobgoblin guard.jpg",
+          loot:[
+            {name:"Warren Scrap", chance:65, min:2, max:4},
+            {type:"equip", item: warlordsWarhelm[2], chance:5},
+            {type:"equip", item: goblinHideJerkin[2], chance:5}
+          ] }
+    ];
+    const DUNGEON_BOSS = {
+        n:"Grosh, the Warren King", elemRes:{Fire:-50}, hp:180, ac:16, b:10, xp:400, g:220, img:"cretures/grosh the warren king.jpg",
+        loot:[
+            {name:"Warren Scrap", chance:100, min:3, max:5},
+            {type:"equip", item: warlordsWarhelm[2], chance:40},
+            {type:"equip", item: warlordsWarhelm[3], chance:25},
+            {type:"equip", item: goblinHideJerkin[2], chance:40},
+            {type:"equip", item: goblinHideJerkin[3], chance:25},
+            {type:"equip", item: shamansTreads[2], chance:40},
+            {type:"equip", item: shamansTreads[3], chance:25}
+        ]
+    };
+
+    let dungeonDepth = 0;
+    let inDungeon = false;
+    const DUNGEON_MAX_DEPTH = 4; // 4 regular rooms, then the boss at depth 5
+
+    function startDungeon() {
+        dungeonDepth = 0;
+        inDungeon = true;
+        showScreen('dungeon-map-screen');
+        renderDungeonMap();
+    }
+    function leaveDungeon() {
+        dungeonDepth = 0;
+        inDungeon = false;
+        showScreen('town-screen');
+        updateUI();
+    }
+    function renderDungeonMap() {
+        const rooms = DUNGEON_MAX_DEPTH + 1; // + boss room
+        const w = 500, h = 120, gap = w / (rooms + 1);
+        let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:500px; background:#0c1420; border-radius:8px; border:1px solid #8b2f3a;">`;
+        svg += `<line x1="${gap}" y1="${h/2}" x2="${gap*rooms}" y2="${h/2}" stroke="#3a3228" stroke-width="4"/>`;
+        for (let i = 1; i <= rooms; i++) {
+            const cx = gap * i, cy = h/2;
+            const isBoss = i === rooms;
+            const cleared = i <= dungeonDepth;
+            const current = i === dungeonDepth + 1;
+            const fill = cleared ? '#2a5a3a' : (current ? (isBoss ? '#8b2f3a' : '#3a4a5a') : '#1a1410');
+            const stroke = current ? '#f2c94c' : '#8b2f3a';
+            svg += `<circle cx="${cx}" cy="${cy}" r="${isBoss?22:16}" fill="${fill}" stroke="${stroke}" stroke-width="${current?3:1.5}"/>`;
+            if (isBoss) svg += `<text x="${cx}" y="${cy+5}" font-size="16" text-anchor="middle">👑</text>`;
+            else if (cleared) svg += `<text x="${cx}" y="${cy+5}" font-size="14" text-anchor="middle" fill="#6de3b0">✓</text>`;
+        }
+        svg += `</svg>`;
+        document.getElementById('dungeon-map-container').innerHTML = svg;
+
+        const statusEl = document.getElementById('dungeon-status');
+        const delveBtn = document.getElementById('delve-btn');
+        if (dungeonDepth >= rooms) {
+            statusEl.innerHTML = `<b style="color:#6de3b0;">The Warren has been cleared.</b> You can leave, or delve again to farm it.`;
+            delveBtn.innerText = 'DELVE AGAIN';
+            dungeonDepth = 0; // resets so DELVE AGAIN starts a fresh run
+        } else {
+            statusEl.innerText = `Room ${dungeonDepth + 1} of ${rooms}` + (dungeonDepth + 1 === rooms ? ' — the Warren King awaits.' : '.');
+            delveBtn.innerText = dungeonDepth + 1 === rooms ? 'FACE THE WARREN KING' : 'DELVE DEEPER';
+        }
+    }
+    function delveDeeper() {
+        dungeonDepth++;
+        const isBossRoom = dungeonDepth >= DUNGEON_MAX_DEPTH + 1;
+        enemy = { ...(isBossRoom ? DUNGEON_BOSS : DUNGEON_MONSTERS[(dungeonDepth-1) % DUNGEON_MONSTERS.length]) };
+        enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
+        document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
+        document.getElementById('h-name-in-combat').innerText = hero.name;
+        showScreen('forest-screen');
+        document.getElementById('explore-ui').style.display = 'none';
+        document.getElementById('combat-ui').style.display = 'block';
+        clearLog();
+        logMsg(isBossRoom ? `<b>${enemy.n} rises to meet you!</b>` : `<b>A ${enemy.n} blocks the tunnel ahead!</b>`);
+        closeCombatMenu();
+    }
 
     const MONSTERS = [
         { n:"Wolf", elemRes:{Fire:-50}, hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
@@ -1631,6 +1790,22 @@
             "You lay a broken goblin dagger on the table. Rowan turns it over in his hand.",
             "\"Goblin-make, but old. This wasn't traded — it was dug up.\" He frowns. \"Dug up from where, I wonder.\""
           ] },
+        { id:"q_warren", name:"Root of the Raids", type:"kill", target:"Grosh, the Warren King", need:1, rewardGold:200, rewardXp:250, minLvl:5,
+          giver:"Captain Rowan", requires:"q_goblins",
+          rewardEquipByClass:{ Fighter: warlordsWarhelm[1], Archer: goblinHideJerkin[1], Mage: shamansTreads[1] },
+          desc:"Every goblin raiding the road comes from somewhere. There's a warren beneath Hollow's Edge — find whatever's running it, and end it.",
+          intro:[
+            "Rowan finally shows you the real map — not the one with the road on it. \"There's tunnels under Hollow's Edge. Deep ones. Every goblin we've killed came out of there, and more keep coming.\"",
+            "\"Something's ruling that warren. Find it. Whatever it is, it needs to stop being in charge.\""
+          ],
+          choices:[
+            {text:"\"If something's crowned itself down there, I'll uncrown it.\"", flag:"q_warren_direct"},
+            {text:"\"I'll find out what it wants before I end it.\"", flag:"q_warren_curious"}
+          ],
+          turnIn:[
+            "You don't need to say much. Whatever you fought down there, it shows on you.",
+            "Rowan studies you for a moment. \"Whatever wore that crown — it's not wearing it anymore?\" You nod. \"Good. That's one less thing digging toward us in the dark.\""
+          ] },
         { id:"q_skeletons", name:"What the Ridge Remembers", type:"kill", target:"Skeleton", need:2, rewardGold:140, rewardXp:120,
           giver:"Captain Rowan", requires:"q_goblins",
           desc:"Something is waking the old dead past the ridge. Whatever's stirring them, put it — and them — back to rest.",
@@ -1760,6 +1935,15 @@
         box.innerHTML = h || `<i style="opacity:.6; font-size:12px;">No quests accepted yet — visit the Notice Board in town.</i>`;
     }
 
+    let questTab = 'available';
+    function switchQuestTab(tab) {
+        questTab = tab;
+        document.getElementById('qtab-available').style.background = tab === 'available' ? 'var(--accent)' : '';
+        document.getElementById('qtab-available').style.color = tab === 'available' ? '#06110e' : '';
+        document.getElementById('qtab-completed').style.background = tab === 'completed' ? 'var(--accent)' : '';
+        document.getElementById('qtab-completed').style.color = tab === 'completed' ? '#06110e' : '';
+        renderQuestBoard();
+    }
     function renderQuestBoard() {
         const list = document.getElementById('quest-list');
         let h = '';
@@ -1769,6 +1953,9 @@
             if (def.requires && (!hero.quests[def.requires] || hero.quests[def.requires].status !== 'completed')) return;
             const q = hero.quests[def.id];
             const status = q ? q.status : 'available';
+            const isCompleted = status === 'completed';
+            if (questTab === 'completed' && !isCompleted) return;
+            if (questTab === 'available' && isCompleted) return;
             h += `<div class="skill-item">`;
             h += `<b>${def.name}</b> <small style="opacity:.6;">— ${def.giver}</small><br><small style="opacity:.8;">${def.desc}</small><br>`;
             const goalLabel = def.type === 'kill' ? `Defeat ${def.need}x ${def.target}` : `Collect ${def.need}x ${def.target}`;
@@ -1786,7 +1973,7 @@
             }
             h += `</div>`;
         });
-        list.innerHTML = h || `<i style="opacity:.6;">No quests posted right now.</i>`;
+        list.innerHTML = h || (questTab === 'completed' ? `<i style="opacity:.6;">No quests completed yet.</i>` : `<i style="opacity:.6;">No quests posted right now — check back after finishing what's active.</i>`);
     }
 
     // Central choke points for material/kill gains so quest progress updates
@@ -1978,7 +2165,12 @@
             logMsg(`You break away and flee from the ${enemy.n}!`);
             setTimeout(() => {
                 document.getElementById('combat-ui').style.display='none';
-                document.getElementById('explore-ui').style.display='block';
+                if (inDungeon) {
+                    logMsg(`You retreat back out of the Warren.`);
+                    leaveDungeon();
+                } else {
+                    document.getElementById('explore-ui').style.display='block';
+                }
             }, 800);
         } else {
             logMsg(`You try to flee from the ${enemy.n} but can't get away!`);
@@ -2273,7 +2465,12 @@
     function continueAfterVictory() {
         document.getElementById('combat-menu-victory').style.display = 'none';
         document.getElementById('combat-ui').style.display='none';
-        document.getElementById('explore-ui').style.display='block';
+        if (inDungeon) {
+            showScreen('dungeon-map-screen');
+            renderDungeonMap();
+        } else {
+            document.getElementById('explore-ui').style.display='block';
+        }
     }
     function rest() { if(hero.gold>=15){ hero.gold-=15; hero.hp=hero.con*10; hero.mana=hero.int*5; save(); updateUI(); } }
     function upgradeStat(s) { if(hero.sp>0){ hero[s]++; hero.sp--; save(); updateUI(); renderProfile(); } }
