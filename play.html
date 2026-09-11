@@ -840,7 +840,12 @@
         } else {
             hero.inventory.forEach(entry => {
                 const lvlTag = entry.item.minLvl ? ` <small style="opacity:.6;">(req. lvl ${entry.item.minLvl})</small>` : '';
-                bagHtml += `<div class="skill-item"><b class="rtxt-${entry.item.r}">${entry.item.n}</b>${lvlTag}<br><small style="opacity:.8;">${itemStatLine(entry.item)}</small><br><button onclick="equipItem(${entry.uid})">Equip</button></div>`;
+                const wrongClass = entry.item.cls && !entry.item.cls.includes(hero.type);
+                const classTag = wrongClass ? ` <small style="color:#ff8b93;">(${entry.item.cls.join('/')} only)</small>` : '';
+                const equipBtn = wrongClass
+                    ? `<button disabled style="opacity:.4;">Equip</button>`
+                    : `<button onclick="equipItem(${entry.uid})">Equip</button>`;
+                bagHtml += `<div class="skill-item"><b class="rtxt-${entry.item.r}">${entry.item.n}</b>${lvlTag}${classTag}<br><small style="opacity:.8;">${itemStatLine(entry.item)}</small><br>${equipBtn}</div>`;
             });
             bagHtml += `<small style="opacity:.55; display:block; margin-top:6px;">Selling is done at the Market.</small>`;
         }
@@ -1134,6 +1139,11 @@
         const entry = hero.inventory[idx];
         const slot = entry.slot;
 
+        if (entry.item.cls && !entry.item.cls.includes(hero.type)) {
+            alert(`${entry.item.n} is for ${entry.item.cls.join('/')} only — your ${hero.type} can't equip it.`);
+            return;
+        }
+
         if (entry.item.minLvl && hero.lvl < entry.item.minLvl) {
             alert(`You need to be level ${entry.item.minLvl} to equip ${entry.item.n}.`);
             return;
@@ -1404,27 +1414,27 @@
     // Ashmere (x<0), a different direction from the main road entirely, so it
     // never competes with the Goblin encounter for the same distance band.
     const WEST_MONSTERS = [
-        { n:"Road Thug", elemRes:{Fire:-50}, hp:28, ac:12, b:4, xp:55, g:26, img:"cretures/road thug.png",
+        { n:"Road Thug", elemRes:{Fire:-25}, hp:28, ac:12, b:4, xp:55, g:26, img:"cretures/road thug.png",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: roadwardenArmor[1], chance:7}
           ] },
-        { n:"Highway Archer", elemRes:{Fire:-50}, hp:24, ac:14, b:5, xp:65, g:30, img:"cretures/highway archer.jpg",
+        { n:"Highway Archer", elemRes:{}, hp:24, ac:14, b:5, xp:65, g:30, img:"cretures/highway archer.jpg",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: blackroadStriders[1], chance:7}
           ] },
-        { n:"Cutpurse", elemRes:{Fire:-50}, hp:26, ac:13, b:4, xp:60, g:40, img:"cretures/cutpurse.png",
+        { n:"Cutpurse", elemRes:{}, hp:26, ac:13, b:4, xp:60, g:40, img:"cretures/cutpurse.png",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: raidersCowl[1], chance:7}
           ] },
-        { n:"Bandit Brawler", elemRes:{Fire:-50}, hp:34, ac:11, b:6, xp:70, g:28, img:"cretures/bandit brawler.jpg",
+        { n:"Bandit Brawler", elemRes:{Fire:-20}, hp:34, ac:11, b:6, xp:70, g:28, img:"cretures/bandit brawler.jpg",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: roadwardenArmor[2], chance:3}
           ] },
-        { n:"Masked Raider", elemRes:{Fire:-50}, hp:30, ac:14, b:5, xp:75, g:35, img:"cretures/masked raider.png",
+        { n:"Masked Raider", elemRes:{}, hp:30, ac:14, b:5, xp:75, g:35, img:"cretures/masked raider.png",
           loot:[
             {name:"Torn Bandit Cloth", chance:65, min:1, max:3},
             {type:"equip", item: blackroadStriders[2], chance:3},
@@ -1432,7 +1442,7 @@
           ] }
     ];
     const WEST_BOSS = {
-        n:"The Blackroad Reaver", elemRes:{Fire:-50}, hp:120, ac:15, b:8, xp:220, g:150, img:"cretures/the blackroad reaver.jpg",
+        n:"The Blackroad Reaver", elemRes:{Fire:-20}, hp:120, ac:15, b:8, xp:220, g:150, img:"cretures/the blackroad reaver.jpg",
         encounterChance:10,
         loot:[
             {name:"Torn Bandit Cloth", chance:100, min:2, max:4},
@@ -1466,22 +1476,22 @@
     ];
 
     const DUNGEON_MONSTERS = [
-        { n:"Goblin Scavenger", elemRes:{Fire:-50}, hp:32, ac:12, b:5, xp:65, g:32, img:"cretures/goblin scavenger.jpg",
+        { n:"Goblin Scavenger", elemRes:{Fire:-35}, hp:32, ac:12, b:5, xp:65, g:32, img:"cretures/goblin scavenger.jpg",
           loot:[
             {name:"Warren Scrap", chance:65, min:1, max:3},
             {type:"equip", item: warlordsWarhelm[1], chance:8}
           ] },
-        { n:"Goblin Shaman", elemRes:{Fire:-50}, hp:26, ac:13, b:6, xp:70, g:34, img:"cretures/goblin shaman.jpg",
+        { n:"Goblin Shaman", elemRes:{Fire:-30, Lightning:30}, hp:26, ac:13, b:6, xp:70, g:34, img:"cretures/goblin shaman.jpg",
           loot:[
             {name:"Warren Scrap", chance:65, min:1, max:3},
             {type:"equip", item: shamansTreads[1], chance:8}
           ] },
-        { n:"Goblin Berserker", elemRes:{Fire:-50}, hp:38, ac:11, b:7, xp:75, g:30, img:"cretures/goblin berserker.jpg",
+        { n:"Goblin Berserker", elemRes:{Fire:-25}, hp:38, ac:11, b:7, xp:75, g:30, img:"cretures/goblin berserker.jpg",
           loot:[
             {name:"Warren Scrap", chance:65, min:1, max:3},
             {type:"equip", item: goblinHideJerkin[1], chance:8}
           ] },
-        { n:"Hobgoblin Guard", elemRes:{Fire:-50}, hp:55, ac:14, b:8, xp:110, g:50, img:"cretures/hobgoblin guard.jpg",
+        { n:"Hobgoblin Guard", elemRes:{}, hp:55, ac:14, b:8, xp:110, g:50, img:"cretures/hobgoblin guard.jpg",
           loot:[
             {name:"Warren Scrap", chance:65, min:2, max:4},
             {type:"equip", item: warlordsWarhelm[2], chance:5},
@@ -1489,7 +1499,7 @@
           ] }
     ];
     const DUNGEON_BOSS = {
-        n:"Grosh, the Warren King", elemRes:{Fire:-50}, hp:180, ac:16, b:10, xp:400, g:220, img:"cretures/grosh the warren king.jpg",
+        n:"Grosh, the Warren King", elemRes:{Fire:-30, Poison:20}, hp:180, ac:16, b:10, xp:400, g:220, img:"cretures/grosh the warren king.jpg",
         loot:[
             {name:"Warren Scrap", chance:100, min:3, max:5},
             {type:"equip", item: warlordsWarhelm[2], chance:40},
@@ -1551,7 +1561,7 @@
         dungeonDepth++;
         const isBossRoom = dungeonDepth >= DUNGEON_MAX_DEPTH + 1;
         enemy = { ...(isBossRoom ? DUNGEON_BOSS : DUNGEON_MONSTERS[(dungeonDepth-1) % DUNGEON_MONSTERS.length]) };
-        enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
+        enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null; hero.dot = null;
         document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
         document.getElementById('e-elem-table').innerHTML = elemResTableHtml(enemy.elemRes);
         document.getElementById('h-name-in-combat').innerText = hero.name;
@@ -1564,22 +1574,22 @@
     }
 
     const MONSTERS = [
-        { n:"Wolf", elemRes:{Fire:-50}, hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
+        { n:"Wolf", elemRes:{Fire:-35}, hp:15, ac:11, b:2, xp:35, g:15, img:"cretures/wolf.jpg", l:0,
           loot:[{name:"Wolf Hide", chance:70, min:1, max:3}] },
-        { n:"Goblin", elemRes:{Fire:-50}, hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
+        { n:"Goblin", elemRes:{Fire:-30}, hp:30, ac:13, b:4, xp:60, g:30, img:"cretures/goblin.jpg", l:200,
           loot:[{name:"Broken Goblin Dagger", chance:70, min:1, max:1}] },
-        { n:"Skeleton", elemRes:{Poison:50}, hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
+        { n:"Skeleton", elemRes:{Poison:60, Lightning:-30}, hp:70, ac:10, b:6, xp:120, g:60, img:"cretures/skeleton.jpg", l:500,
           loot:[{name:"Goblin Bones", chance:70, min:1, max:5}] },
         // Undead theme (The Ridge, deepening past the Skeleton band)
-        { n:"Wraith", elemRes:{Poison:50}, hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
+        { n:"Wraith", elemRes:{Poison:75, Fire:-40}, hp:90, ac:12, b:7, xp:150, g:75, img:"cretures/Wraith.png", l:600,
           loot:[
             {name:"Wraith Essence", chance:65, min:1, max:2},
             {name:"Ember Shard", chance:10, min:1, max:1}
           ] },
-        { n:"Ghoul", elemRes:{Fire:-50, Poison:50}, hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
+        { n:"Ghoul", elemRes:{Fire:-60, Poison:40}, monsterElem:"Poison", monsterElemChance:20, hp:110, ac:11, b:9, xp:180, g:90, img:"cretures/ghoul.png", l:700,
           loot:[{name:"Ghoul Claw", chance:65, min:1, max:3}] },
         // Water-loving theme (The Sunken Bog)
-        { n:"Bog Wretch", elemRes:{Fire:-50}, hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
+        { n:"Bog Wretch", elemRes:{Lightning:-40}, hp:45, ac:12, b:5, xp:160, g:70, img:"cretures/Bog Wretch.jpg", l:800,
           loot:[
             {name:"Slick Bog Scale", chance:65, min:1, max:3},
             {type:"equip", item: bogBoots[1], chance:8},
@@ -1588,21 +1598,21 @@
             {type:"equip", item: bogtideBulwark, chance:5},
             {type:"equip", item: waterloggedGreathelm, chance:5}
           ] },
-        { n:"Reed Serpent", elemRes:{Fire:-50}, hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
+        { n:"Reed Serpent", elemRes:{Lightning:-50}, monsterElem:"Poison", monsterElemChance:20, hp:55, ac:13, b:6, xp:190, g:80, img:"cretures/Reed Serpent.jpg", l:950,
           loot:[
             {name:"Serpent Scale", chance:65, min:1, max:3},
             {type:"equip", item: reedSerpentsFang, chance:6},
             {type:"equip", item: reedScaledCuirass, chance:5}
           ] },
         // Subterranean/insectoid theme (The Old Mine)
-        { n:"Deepmine Crawler", elemRes:{Fire:-50}, hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
+        { n:"Deepmine Crawler", elemRes:{Fire:-45}, hp:60, ac:13, b:6, xp:210, g:85, img:"cretures/Deepmine Crawler.jpg", l:1200,
           loot:[
             {name:"Chitin Shard", chance:65, min:1, max:3},
             {type:"equip", item: deepmineHoods[1], chance:8},
             {type:"equip", item: deepmineHoods[2], chance:2},
             {type:"equip", item: deepmineRepeater, chance:6}
           ] },
-        { n:"Tunnel Broodling", elemRes:{Fire:-50, Poison:50}, hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
+        { n:"Tunnel Broodling", elemRes:{Fire:-55, Poison:50}, hp:75, ac:14, b:7, xp:230, g:95, img:"cretures/Tunnel Broodling.jpg", l:1400,
           loot:[
             {name:"Brood Silk", chance:65, min:1, max:3},
             {type:"equip", item: crawlerSilkRecurve, chance:6},
@@ -1610,14 +1620,14 @@
             {type:"equip", item: broodlingTreads, chance:5}
           ] },
         // Corrupted nature theme (The Blightwood)
-        { n:"Blightwood Stalker", elemRes:{Fire:-50, Poison:50}, hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
+        { n:"Blightwood Stalker", elemRes:{Fire:-60, Poison:60}, hp:85, ac:14, b:8, xp:280, g:110, img:"cretures/Blightwood Stalker.jpg", l:1700,
           loot:[
             {name:"Blighted Bark", chance:65, min:1, max:3},
             {type:"equip", item: blightRobes[1], chance:8},
             {type:"equip", item: blightRobes[2], chance:2},
             {type:"equip", item: blightstepSlippers, chance:5}
           ] },
-        { n:"Rotroot Horror", elemRes:{Fire:-50, Poison:50}, hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
+        { n:"Rotroot Horror", elemRes:{Fire:-50, Poison:70}, monsterElem:"Poison", monsterElemChance:20, hp:100, ac:15, b:9, xp:310, g:125, img:"cretures/Rotroot Horror.jpg", l:1950,
           loot:[
             {name:"Rotroot Sap", chance:65, min:1, max:3},
             {type:"equip", item: rotrootWandstaff, chance:6},
@@ -1628,7 +1638,7 @@
     // Ember Wisp — rare special encounter (not a normal tier monster), can appear
     // instead of a Skeleton once you're deep enough in.
     const EMBER_WISP = {
-        n:"Ember Wisp", elemRes:{Fire:75}, hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
+        n:"Ember Wisp", elemRes:{Fire:75, Ice:-50}, monsterElem:"Fire", monsterElemChance:20, hp:50, ac:14, b:8, xp:180, g:90, img:"cretures/Ember Wisp.jpg",
         zoneMin:500, zoneMax:799, encounterChance:8,
         loot:[
             {name:"Ember Shard", chance:100, min:1, max:2},
@@ -1640,25 +1650,25 @@
     // guards the legendary tier of that zone's gear line; Cinderkin guards its
     // own exclusive weapon instead of a shared set.
     const BOSSES = [
-        { n:"The Drowned King", elemRes:{Fire:-50}, hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
+        { n:"The Drowned King", elemRes:{Lightning:-35, Ice:30}, hp:220, ac:16, b:14, xp:600, g:280, img:"cretures/The Drowned King.jpg",
           zoneMin:800, zoneMax:1199, encounterChance:8,
           loot:[
             {name:"Slick Bog Scale", chance:100, min:2, max:4},
             {type:"equip", item: bogBoots[3], chance:25}
           ] },
-        { n:"The Unlit Warden", elemRes:{Fire:-50}, hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
+        { n:"The Unlit Warden", elemRes:{Fire:-25, Lightning:40}, hp:260, ac:17, b:16, xp:750, g:340, img:"cretures/The Unlit Warden.jpg",
           zoneMin:1200, zoneMax:1699, encounterChance:8,
           loot:[
             {name:"Chitin Shard", chance:100, min:2, max:4},
             {type:"equip", item: deepmineHoods[3], chance:25}
           ] },
-        { n:"The Blight Heart", elemRes:{Fire:-50, Poison:50}, hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
+        { n:"The Blight Heart", elemRes:{Fire:-40, Poison:80}, hp:320, ac:18, b:19, xp:950, g:420, img:"cretures/The Blight Heart.jpg",
           zoneMin:1700, zoneMax:2199, encounterChance:8,
           loot:[
             {name:"Blighted Bark", chance:100, min:2, max:4},
             {type:"equip", item: blightRobes[3], chance:25}
           ] },
-        { n:"Cinderkin, the Ember's Herald", elemRes:{Fire:75}, hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
+        { n:"Cinderkin, the Ember's Herald", elemRes:{Fire:90, Ice:-40}, monsterElem:"Fire", monsterElemChance:25, hp:420, ac:20, b:24, xp:1400, g:650, img:"cretures/Cinderkin, the Ember's Herald.jpg",
           zoneMin:2200, zoneMax:999999, encounterChance:6,
           loot:[
             {type:"equip", item: cinderkinsBrand, chance:20}
@@ -2055,7 +2065,7 @@
 
     // ============ COMBAT ============
     function triggerCombat(dist) {
-        enemy = {...pickEncounter(hero.x, hero.y, dist)}; enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null;
+        enemy = {...pickEncounter(hero.x, hero.y, dist)}; enemy.curHp = enemy.hp; enemy.stunned = false; enemy.chilled = false; enemy.dot = null; hero.dot = null;
         document.getElementById('explore-ui').style.display='none'; document.getElementById('combat-ui').style.display='block';
         document.getElementById('c-h-img').src = hero.img; document.getElementById('c-e-img').src = enemy.img; document.getElementById('e-name').innerText = enemy.n;
         document.getElementById('e-elem-table').innerHTML = elemResTableHtml(enemy.elemRes);
@@ -2361,6 +2371,16 @@
     function enemyTurn() {
         document.getElementById('atk-btn').disabled=true;
         setTimeout(()=>{
+            // The hero's own DoT (from a monster's elemental attack, e.g. Ghoul
+            // poison) ticks at the start of this turn, before the enemy acts.
+            if (hero.dot && hero.dot.turns > 0) {
+                hero.hp -= hero.dot.dmg;
+                logMsg(`You take <b>${hero.dot.dmg}</b> ${hero.dot.type} damage.`);
+                hero.dot.turns--;
+                if (hero.dot.turns <= 0) hero.dot = null;
+                updateUI();
+                if (hero.hp <= 0) { logMsg(`<b>You have died...</b>`); alert("You died!"); location.reload(); return; }
+            }
             // Damage-over-time (Burn/Poison) ticks at the start of the enemy's turn,
             // even if they're stunned — fire and poison don't care. Resistance is a
             // percentage (Diablo-style): positive reduces damage, negative (weakness)
@@ -2404,6 +2424,19 @@
                 hero.hp -= dmg;
                 logMsg(`The ${enemy.n} hits you for <b>${dmg}</b> damage${wasChilled?' (chilled — halved)':''}.`);
                 applyShieldElemental();
+
+                // Certain creatures (Ghoul, Reed Serpent, Ember Wisp...) can inflict
+                // their own elemental effect on the hero when they land a hit.
+                if (enemy.monsterElem && Math.random()*100 < (enemy.monsterElemChance || 0)) {
+                    const edmg = 4 + Math.floor((enemy.b||0)/2);
+                    if (enemy.monsterElem === 'Fire') {
+                        hero.dot = { type:'Burn', dmg: edmg, turns: 3 };
+                        logMsg(`You're set <b>ablaze</b> by the ${enemy.n}!`);
+                    } else if (enemy.monsterElem === 'Poison') {
+                        hero.dot = { type:'Poison', dmg: edmg, turns: 3 };
+                        logMsg(`You're <b>poisoned</b> by the ${enemy.n}!`);
+                    }
+                }
             } else {
                 logMsg(`The ${enemy.n} attacks and misses!`);
             }
